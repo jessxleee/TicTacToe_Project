@@ -14,7 +14,7 @@ GtkWidget *result_label;
 
 void gameMenu();
 void main_page();
-void gameBoard();
+void gameBoard_mode2();
 char checkWinner();
 bool checkTie();
 void printWinner(char winner);
@@ -82,18 +82,15 @@ void clear_window(GtkWidget *window) {
 void main_page(GtkWidget *widget, gpointer data) {
     GtkWidget *window = gtk_widget_get_toplevel(widget);  
     game_mode = GPOINTER_TO_INT(data);
-    result_label = gtk_label_new("");  
-    gtk_widget_set_name(result_label, "result_label");
 
     if (game_mode == 1) {
         g_print("1 Player game mode selected.\n");
         clear_window(window);
-        gameBoard(window);
 
     } else if (game_mode == 2) {
         g_print("2 Players game mode selected.\n");
         clear_window(window);
-        gameBoard(window);
+        gameBoard_mode2(window);
 
     }
 
@@ -123,7 +120,7 @@ void inputHandler(GtkWidget *widget, gpointer data) {
     }
 }
 
-void gameBoard(GtkWidget *window){
+void gameBoard_mode2(GtkWidget *window){
     //Scoreboard label
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(window), vbox); 
@@ -154,12 +151,12 @@ void gameBoard(GtkWidget *window){
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
        
     GtkWidget *reset_button= gtk_button_new_with_label("Reset");
-    g_signal_connect(reset_button, "clicked", G_CALLBACK(resetBoard), GINT_TO_POINTER(1));
+    g_signal_connect(reset_button, "clicked", G_CALLBACK(resetBoard), window);
     gtk_box_pack_start(GTK_BOX(hbox), reset_button, TRUE, TRUE, 0);
     gtk_widget_set_name(reset_button, "hbox-button");
 
     GtkWidget *exit_button= gtk_button_new_with_label("Exit");
-    g_signal_connect(reset_button, "clicked", G_CALLBACK(exitGame), window);
+    g_signal_connect(exit_button, "clicked", G_CALLBACK(exitGame), window);
     gtk_box_pack_start(GTK_BOX(hbox), exit_button, TRUE, TRUE, 0);
     gtk_widget_set_name(exit_button, "hbox-button");
 
@@ -230,30 +227,27 @@ void endGame(){
 }
 
 
-void resetBoard(GtkWidget *widget, gpointer data){
-     for (int row = 0; row < 3; row++) {
+void resetBoard(GtkWidget *widget, gpointer window){
+        for (int row = 0; row < 3; row++) {
         for (int col = 0; col < 3; col++) {
             board[row][col] = '\0';  // Reset each cell to empty
         }
     }
 
-    // Reset all button labels to empty
     for (int i = 0; i < 9; i++) {
         gtk_button_set_label(GTK_BUTTON(buttons[i]), "");  // Clear button text
         gtk_widget_set_sensitive(buttons[i], TRUE);  // Enable all buttons
     }
 
-    // Reset player turn to Player 1
     player_turn = 1;
     gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");  // Reset status label
-
-    // Clear the result label
-    gtk_label_set_text(GTK_LABEL(result_label), "");
+    gtk_label_set_text(GTK_LABEL(result_label), "");  // Clear the result label
 }
 
 void exitGame(GtkWidget *widget, gpointer window) {
     clear_window(window);
     gameMenu(window);
+    gtk_widget_show_all(window);
 }
 
 static void activate(GtkApplication *app, gpointer user_data) {
