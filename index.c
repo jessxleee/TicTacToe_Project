@@ -1,5 +1,8 @@
 #include <gtk/gtk.h>
 #include <stdbool.h>
+#include <cairo.h>
+#include <minmax.h>
+
 
 // Game State Variables
 char board[3][3];
@@ -31,15 +34,26 @@ void load_css() {
     g_object_unref(provider);  // Free the provider after use
 }
 
+
 void gameMenu(GtkWidget *window){
     GtkWidget *box;
     GtkWidget *button_1p, *button_2p;
 
-    // Box to hold the buttons
-    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_widget_set_halign(box, GTK_ALIGN_CENTER);
     gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
     gtk_container_add(GTK_CONTAINER(window), box);
+
+    // Header
+    GtkWidget *heading = gtk_label_new("TIC TAC TOE");
+    gtk_widget_set_name(heading, "heading");
+    gtk_widget_set_halign(heading, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(box), heading, FALSE, FALSE, 5);
+
+    // icon
+    GtkWidget *image = gtk_image_new_from_file("images/icon.png");
+    gtk_box_pack_start(GTK_BOX(box), image, FALSE, FALSE, 0);
+    gtk_widget_set_name(image, "image");
 
     // "1 Player" button
     button_1p = gtk_button_new_with_label("1 Player");
@@ -66,7 +80,6 @@ void clear_window(GtkWidget *window) {
 }
 
 void main_page(GtkWidget *widget, gpointer data) {
-    GtkWidget *reset_button, *exit_button;
     GtkWidget *window = gtk_widget_get_toplevel(widget);  
     game_mode = GPOINTER_TO_INT(data);
     result_label = gtk_label_new("");  
@@ -119,6 +132,10 @@ void gameBoard(GtkWidget *window){
     gtk_widget_set_halign(status_label, GTK_ALIGN_CENTER);
     gtk_box_pack_start(GTK_BOX(vbox), status_label, FALSE, FALSE, 10);
 
+    result_label = gtk_label_new("");  // Empty label initially
+    gtk_widget_set_name(result_label, "result-label");
+    gtk_box_pack_start(GTK_BOX(vbox), result_label, FALSE, FALSE, 10);
+
     GtkWidget *grid = gtk_grid_new();
     gtk_container_add(GTK_CONTAINER(window), grid);
     gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
@@ -142,7 +159,7 @@ void gameBoard(GtkWidget *window){
     gtk_widget_set_name(reset_button, "hbox-button");
 
     GtkWidget *exit_button= gtk_button_new_with_label("Exit");
-    g_signal_connect(reset_button, "clicked", G_CALLBACK(exitGame), GINT_TO_POINTER(1));
+    g_signal_connect(reset_button, "clicked", G_CALLBACK(exitGame), window);
     gtk_box_pack_start(GTK_BOX(hbox), exit_button, TRUE, TRUE, 0);
     gtk_widget_set_name(exit_button, "hbox-button");
 
@@ -206,49 +223,37 @@ void printWinner(char winner){
     else{}
 }
 
-void endGame_popup(){
-    GtkWidget *dialog;
-    GtkWidget *content_area;
-
-    dialog = gtk_dialog_new_with_buttons("Game Over",
-                                         NULL,
-                                         GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-                                         "_EXIT",
-                                         GTK_RESPONSE_OK,
-                                         NULL);
-
-    content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-    gtk_container_add(GTK_CONTAINER(content_area), result_label);
-
-    gtk_widget_show_all(dialog);
-    gtk_dialog_run(GTK_DIALOG(dialog));
-    gtk_widget_destroy(dialog);
-}
-
 void endGame(){
     for(int i = 0; i < 9; i++){
         gtk_widget_set_sensitive(buttons[i], FALSE); //disable all buttons 
     }
 }
 
+
 void resetBoard(GtkWidget *widget, gpointer data){
-    GtkWidget *window = gtk_widget_get_toplevel(widget);
-    GList *children = gtk_container_get_children(GTK_CONTAINER(window));
-    for (GList *iter = children; iter != NULL; iter = g_list_next(iter)) {
-        gtk_widget_destroy(GTK_WIDGET(iter->data));  // Destroy each widget
+     for (int row = 0; row < 3; row++) {
+        for (int col = 0; col < 3; col++) {
+            board[row][col] = '\0';  // Reset each cell to empty
+        }
     }
-    g_list_free(children);
+
+    // Reset all button labels to empty
     for (int i = 0; i < 9; i++) {
-        board[i / 3][i % 3] = '\0';  // Reset the internal board
+        gtk_button_set_label(GTK_BUTTON(buttons[i]), "");  // Clear button text
+        gtk_widget_set_sensitive(buttons[i], TRUE);  // Enable all buttons
     }
+
+    // Reset player turn to Player 1
     player_turn = 1;
+    gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");  // Reset status label
 
-    gameBoard(window);
-
+    // Clear the result label
+    gtk_label_set_text(GTK_LABEL(result_label), "");
 }
 
-void exitGame(GtkWidget *widget, gpointer data){
-    gtk_main_quit();
+void exitGame(GtkWidget *widget, gpointer window) {
+    clear_window(window);
+    gameMenu(window);
 }
 
 static void activate(GtkApplication *app, gpointer user_data) {
@@ -261,7 +266,6 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     load_css();
     gameMenu(window);
-
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
     gtk_widget_show_all(window);
