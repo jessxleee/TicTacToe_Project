@@ -3,8 +3,13 @@
 1. Download MSYS2 Installer from https://www.msys2.org/
 2. Install MSYS2 and open the MSYS2 Shell
 3. Update the package database
-    'pacman -Syu'
-4. Install GTK with : 'pacman -S mingw-w64-x86_64-gtk3'
+```bash
+    pacman -Syu
+```
+4. Install GTK with :
+```bash 
+pacman -S mingw-w64-x86_64-gtk3'
+```
 
 **Compiling GTK Application**
 1. To ensure that your compilier recognises GTK 3.0, open up you c_cpp_properties.json and include the below into your includePath:
@@ -21,7 +26,7 @@
                 "C:/msys64/mingw64/include/SDL2",
                 "C:/msys64/mingw64/include/harfbuzz",
                 "C:/msys64/mingw64/include"
-            ],*
+            ],
 
 ```
 
@@ -33,6 +38,10 @@
    ```
 4. Compile and run the program:
 ```bash
- gcc index -o index.c $(pkg-config --cflags --libs gtk+-3.0)
+ gcc index.c -o index $(pkg-config --cflags --libs gtk+-3.0)
  ./index.c
+```
+5. if gcc command not found, install GCC for the 64-bit environment:
+```bash
+pacman -S mingw-w64-x86_64-gcc
 ```
