@@ -3,6 +3,8 @@
 #include <cairo.h>
 #include <minmax.h>
 
+#include <limits.h>
+#include <stdio.h>
 
 // Game State Variables
 char board[3][3];
@@ -32,6 +34,232 @@ void load_css() {
 
     gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
     g_object_unref(provider);  // Free the provider after use
+}
+
+/*Identify player and opponent*/
+char player = 'X', opponent ='O';
+
+/*Datatype structure to represent board*/
+struct Move
+{
+    int row,col; /*row and column of move*/
+};
+
+/*Check if there are any moves left on the board*/
+int MovesLeft(char board[3][3]){
+
+    for (int i=0; i < 3; i++){ /*Loop rows*/
+
+        for(int j=0; j<3; j++){/*Loop columns*/
+            
+            if(board[i][j] == '\0'){/*if find empty cell*/
+                return 1; /*Tell program game can continue*/
+            }
+        }
+    }
+    return 0; /*Tell program game over*/
+}
+
+/*Evaluate board and find if win*/
+int eval_board(char board[3][3]){
+    
+    /*Find Row for X or O win*/
+    for (int row = 0; row < 3; row++){
+        if (board[row][0] == board[row][1] && board[row][1] == board[row][2]){ /*If all cells in row match*/
+            if (board[row][0] == player){
+                return 10; /*If player win*/
+            }
+            else if (board[row][0] == opponent){
+                return -10; /*If opponent win*/
+            }
+        }
+
+    }
+
+    /*Find Column for X or O win*/  
+    for (int col = 0; col < 3; col++){
+        if (board[0][col] == board[1][col] && board[1][col] == board[2][col]){ /*If all cells in column match*/
+            if (board[0][col] == player){
+                return 10; /*If player win*/
+            }
+            else if (board[0][col] == opponent){
+                return -10; /*If opponent win*/
+            }
+        }
+
+    }
+
+    /*Check Diagonals for X or O victory*/
+    if (board[0][0] == board[1][1] && board[1][1] == board[2][2]){
+            if (board[0][0] == player){
+                return 10; /*If player win*/
+            }
+            else if (board[0][0] == opponent){
+                return -10; /*If opponent win*/
+            }
+        }
+    if (board[0][2] == board[1][1] && board[1][1] == board[2][0]){
+            if (board[0][2] == player){
+                return 10; /*If player win*/
+            }
+            else if (board[0][2] == opponent){
+                return -10; /*If opponent win*/
+            }
+        }
+
+    return 0; /*No win, game continues*/
+}
+
+/*Minmax algorithm to determine best next move*/
+int minmax(char board[3][3], int depth, bool ismax){
+
+    int score = eval_board(board); /*Evaluate current board*/
+
+    if(score == 10){ /*If player wins*/
+        return score - depth; /*Return score adjusted with depth*/
+    }
+    else if (score == -10) /*If opponent wins*/
+    {
+        return score + depth; /*Return score adjusted with depth*/
+    }
+    
+    if (!MovesLeft(board)){ /*If no moves left*/
+        return 0; /*Return a tie game*/
+    }
+
+    if(ismax){ /*If it's maximise player's (Player) turn*/
+        int best = -1000; /*Set low best score*/
+
+        for (int i = 0; i < 3; i++){ /*Loop through rows*/
+            for (int j = 0; j < 3; j++) /*Loop through columns*/
+            {
+                if (board[i][j] == '\0'){ /*If cell is empty*/
+                    
+                    board[i][j] = player; /*Make potential player move*/
+
+                    int result = minmax(board, depth + 1, false); /*Recursive minmax algorithm and compare the scores*/
+
+                    if (result > best){ /*If result is better than current best score*/
+                        best = result; /*Update best score*/
+                    }
+
+                    board[i][j] = '\0'; /*Reset the move*/
+                }
+
+            }
+        }
+        return best;  /*Return best score for maximising player*/
+    }
+    else { /*If it's minimizing player's (Opponent) turn*/
+
+        int best = 1000; /*Set high best score*/
+
+        for (int i = 0; i < 3; i++){ /*Loop rows*/
+            for (int j = 0; j < 3; j++) /*Loop columns*/
+            {
+                if (board[i][j] == '\0'){ /*If cell is empty*/
+                    
+                    board[i][j] = opponent; /*Make move*/
+
+                    int result = minmax(board, depth + 1, true); /*Recursive minmax recursively and compare scores*/
+
+                    if (result < best){ /*If result better than best score*/
+                        best = result; /*Update best score with result*/
+                    }
+
+                    board[i][j] = '\0'; /*Reset board and undo move*/
+                }
+
+            }
+        }
+        return best; /*Return best score for minimizing player*/
+
+    }
+
+    
+}
+
+/*Find best move for player*/
+struct Move find_best_move(char board[3][3]){
+
+    int bestmove_value = -1000; /*Set low best move value*/
+    
+    struct Move best_move; /*Structure to store best value*/
+    best_move.row = -1; /*Start row*/
+    best_move.col = -1; /*Start column*/
+
+    for (int i=0; i < 3; i++){ /*Loop row*/
+
+        for(int j=0; j<3; j++){ /*Loop column*/
+            if(board[i][j]  == '\0') { /*If cell is empty*/
+                
+                /*make move*/
+                board[i][j] = player;
+
+                /*evaluate move using minmax algorithm*/
+                int move = minmax(board, 0, false);
+
+                /*undo move*/
+                board[i][j] = '\0';
+
+                /*compare value of current move vs current best move*/
+                if (bestmove_value < move){
+
+                    best_move.row = i; /*Update best move row*/
+                    best_move.col = j; /*Update best move column*/
+                    bestmove_value = move; /*Update best move value*/
+
+                }
+            }
+        }
+
+    }
+
+    printf("The value of the best move is : %d\n\n", bestmove_value); /*Print best move value*/
+    return best_move; /*Return best move found*/
+
+}
+
+
+void getGtkBoardState(char output[3][3]) {
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            GtkWidget *button = buttons[i * 3 + j];  // Get the corresponding button
+            const gchar *label = gtk_button_get_label(GTK_BUTTON(button));
+
+            if (g_strcmp0(label, "X") == 0) {
+                output[i][j] = 'X';  // Player X
+            } else if (g_strcmp0(label, "O") == 0) {
+                output[i][j] = 'O';  // Player O
+            } else {
+                output[i][j] = '\0';  // Empty cell
+            }
+        }
+    }
+}
+
+
+void getCurrentBoardState(char output[3][3]) {
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            output[i][j] = board[i][j];  // Copy current board state to output
+        }
+    }
+}
+
+void computer_Move() {
+    struct Move best_move = find_best_move(board);  // Get the best move using Minimax
+
+    if (best_move.row != -1 && best_move.col != -1) {  // Check if a valid move was found
+        board[best_move.row][best_move.col] = 'O';  // Update the board
+        gtk_button_set_label(GTK_BUTTON(buttons[best_move.row * 3 + best_move.col]), "O");  // Update the button label
+
+        player_turn = 1;  // Switch back to player 1
+        gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");  // Update status
+
+        char winner = checkWinner();  // Check for a winner
+        printWinner(winner);
+    }
 }
 
 
@@ -83,9 +311,12 @@ void main_page(GtkWidget *widget, gpointer data) {
     GtkWidget *window = gtk_widget_get_toplevel(widget);  
     game_mode = GPOINTER_TO_INT(data);
 
+    clear_window(window);
+
     if (game_mode == 1) {
         g_print("1 Player game mode selected.\n");
         clear_window(window);
+        gameBoard_mode2(window);
 
     } else if (game_mode == 2) {
         g_print("2 Players game mode selected.\n");
@@ -115,8 +346,16 @@ void inputHandler(GtkWidget *widget, gpointer data) {
             player_turn = 1;
             gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");
         }
+        
+        char currentBoard[3][3];
+        getGtkBoardState(currentBoard);
+
         char winner = checkWinner();
         printWinner(winner);
+
+        if (game_mode == 1 && player_turn == 2) {
+            computer_Move();
+        }
     }
 }
 
@@ -281,3 +520,9 @@ int main(int argc, char *argv[]) {
 
     return status;
 }
+
+
+
+
+
+
