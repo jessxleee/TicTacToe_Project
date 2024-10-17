@@ -38,7 +38,7 @@ pacman -S mingw-w64-x86_64-gtk3'
    ```
 4. Compile and run the program:
 ```bash
- gcc index -o index.c $(pkg-config --cflags --libs gtk+-3.0)
+ gcc index.c -o index $(pkg-config --cflags --libs gtk+-3.0)
  ./index.c
 ```
 5. if gcc command not found, install GCC for the 64-bit environment:
