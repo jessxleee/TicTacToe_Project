@@ -1,3 +1,22 @@
+/* Style for the header bar */
+headerbar {
+    background-color: #1f1f1f; /* Dark background color */           /* White text color */
+    padding: 0px 10px;
+    border-bottom: 1px solid #333; /* Bottom border for separation */
+}
+
+
+headerbar button {
+    background-color: none; /* Transparent background for buttons */
+    border: none;                  /* Remove button border */
+    padding: 5px;
+    margin: 5px 2px;
+}
+
+headerbar button:hover {
+    background-color: #3c3c3c; 
+}
+
 #heading{
     font-size: 48px;
     color: black;
@@ -8,6 +27,7 @@
     font-size: 24px;
     background-color: #f0f0f0;
     width: 100px;
+    margin: 5px;
     padding: 20px 30px;
     border-radius: 5px;
     border: 2px solid black ;
@@ -66,7 +86,8 @@ button:active {
     color: #40E0D0; 
     font-size: 18px;
     font-weight: bold;
-    padding: 0;
+    padding: 10px;
+    margin: 0 10px;
     text-align: center; 
     cursor: pointer;  
     box-shadow: none;

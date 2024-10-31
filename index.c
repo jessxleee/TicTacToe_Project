@@ -2,21 +2,34 @@
 #include <stdbool.h>
 #include <cairo.h>
 #include <minmax.h>
-
 #include <limits.h>
 #include <stdio.h>
 
 // Game State Variables
 char board[3][3];
+char output[3][3];
 GtkWidget *buttons[9];
 int game_mode = 0;
 int player_turn = 1; // 1 for X, 2 for O
+char player = 'X', opponent ='O'; //Identify player and opponent
 GtkWidget *status_label;
 GtkWidget *result_label;
 
+/*Datatype structure to represent board*/
+struct Move
+{
+    int row,col; /*row and column of move*/
+};
+
+
 void gameMenu();
 void main_page();
+void gameBoard_mode1();
 void gameBoard_mode2();
+int MovesLeft();
+int minmax(int depth, bool ismax);
+struct Move find_best_move();
+void getGtkBoardState();
 char checkWinner();
 bool checkTie();
 void printWinner(char winner);
@@ -27,26 +40,17 @@ void exitGame();
 void load_css() {
     GtkCssProvider *provider = gtk_css_provider_new();
     GdkDisplay *display = gdk_display_get_default();
-    GdkScreen *screen = gdk_display_get_default_screen(display);
 
     // Load the external CSS file
-    gtk_css_provider_load_from_path(provider, "style.css", NULL);
+    gtk_css_provider_load_from_path(provider, "style.css");
 
-    gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
+    gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
     g_object_unref(provider);  // Free the provider after use
 }
 
-/*Identify player and opponent*/
-char player = 'X', opponent ='O';
-
-/*Datatype structure to represent board*/
-struct Move
-{
-    int row,col; /*row and column of move*/
-};
 
 /*Check if there are any moves left on the board*/
-int MovesLeft(char board[3][3]){
+int MovesLeft(){
 
     for (int i=0; i < 3; i++){ /*Loop rows*/
 
@@ -61,7 +65,7 @@ int MovesLeft(char board[3][3]){
 }
 
 /*Evaluate board and find if win*/
-int eval_board(char board[3][3]){
+int eval_board(){
     
     /*Find Row for X or O win*/
     for (int row = 0; row < 3; row++){
@@ -111,7 +115,7 @@ int eval_board(char board[3][3]){
 }
 
 /*Minmax algorithm to determine best next move*/
-int minmax(char board[3][3], int depth, bool ismax){
+int minmax(int depth, bool ismax){
 
     int score = eval_board(board); /*Evaluate current board*/
 
@@ -137,7 +141,7 @@ int minmax(char board[3][3], int depth, bool ismax){
                     
                     board[i][j] = player; /*Make potential player move*/
 
-                    int result = minmax(board, depth + 1, false); /*Recursive minmax algorithm and compare the scores*/
+                    int result = minmax(depth + 1, false); /*Recursive minmax algorithm and compare the scores*/
 
                     if (result > best){ /*If result is better than current best score*/
                         best = result; /*Update best score*/
@@ -161,7 +165,7 @@ int minmax(char board[3][3], int depth, bool ismax){
                     
                     board[i][j] = opponent; /*Make move*/
 
-                    int result = minmax(board, depth + 1, true); /*Recursive minmax recursively and compare scores*/
+                    int result = minmax(depth + 1, true); /*Recursive minmax recursively and compare scores*/
 
                     if (result < best){ /*If result better than best score*/
                         best = result; /*Update best score with result*/
@@ -180,7 +184,7 @@ int minmax(char board[3][3], int depth, bool ismax){
 }
 
 /*Find best move for player*/
-struct Move find_best_move(char board[3][3]){
+struct Move find_best_move(){
 
     int bestmove_value = -1000; /*Set low best move value*/
     
@@ -197,7 +201,7 @@ struct Move find_best_move(char board[3][3]){
                 board[i][j] = player;
 
                 /*evaluate move using minmax algorithm*/
-                int move = minmax(board, 0, false);
+                int move = minmax(0, false);
 
                 /*undo move*/
                 board[i][j] = '\0';
@@ -221,11 +225,11 @@ struct Move find_best_move(char board[3][3]){
 }
 
 
-void getGtkBoardState(char output[3][3]) {
+void getGtkBoardState() {
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            GtkWidget *button = buttons[i * 3 + j];  // Get the corresponding button
-            const gchar *label = gtk_button_get_label(GTK_BUTTON(button));
+            GtkButton *button = GTK_BUTTON(buttons[i * 3 + j]);  // Get the corresponding button
+            const gchar *label = gtk_button_get_label(button);
 
             if (g_strcmp0(label, "X") == 0) {
                 output[i][j] = 'X';  // Player X
@@ -270,45 +274,42 @@ void gameMenu(GtkWidget *window){
     box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_widget_set_halign(box, GTK_ALIGN_CENTER);
     gtk_widget_set_valign(box, GTK_ALIGN_CENTER);
-    gtk_container_add(GTK_CONTAINER(window), box);
+    gtk_window_set_child(GTK_WINDOW(window), box);
 
     // Header
     GtkWidget *heading = gtk_label_new("TIC TAC TOE");
     gtk_widget_set_name(heading, "heading");
     gtk_widget_set_halign(heading, GTK_ALIGN_CENTER);
-    gtk_box_pack_start(GTK_BOX(box), heading, FALSE, FALSE, 5);
+    gtk_box_append(GTK_BOX(box), heading);
 
     // icon
-    GtkWidget *image = gtk_image_new_from_file("images/icon.png");
-    gtk_box_pack_start(GTK_BOX(box), image, FALSE, FALSE, 0);
-    gtk_widget_set_name(image, "image");
+    GtkWidget *picture = gtk_picture_new_for_filename("images/icon.png");
+    gtk_box_append(GTK_BOX(box), picture);
+    gtk_widget_set_name(picture, "picture");
 
     // "1 Player" button
     button_1p = gtk_button_new_with_label("1 Player");
     g_signal_connect(button_1p, "clicked", G_CALLBACK(main_page), GINT_TO_POINTER(1));
-    gtk_box_pack_start(GTK_BOX(box), button_1p, TRUE, TRUE, 0);
+    gtk_box_append(GTK_BOX(box), button_1p);
     gtk_widget_set_name(button_1p, "players-button");
 
     //"2 Players" button
     button_2p = gtk_button_new_with_label("2 Player");
     g_signal_connect(button_2p, "clicked", G_CALLBACK(main_page), GINT_TO_POINTER(2));
-    gtk_box_pack_start(GTK_BOX(box), button_2p, TRUE, TRUE, 0);
+    gtk_box_append(GTK_BOX(box), button_2p);
     gtk_widget_set_name(button_2p, "players-button");
 
 }
 
 void clear_window(GtkWidget *window) {
-    GList *children, *iter;
-    children = gtk_container_get_children(GTK_CONTAINER(window));
-
-    for (iter = children; iter != NULL; iter = g_list_next(iter)) {
-        gtk_widget_destroy(GTK_WIDGET(iter->data));
+    GtkWidget *child = gtk_window_get_child(GTK_WINDOW(window));
+    if (child != NULL) {
+        gtk_window_set_child(GTK_WINDOW(window), NULL);  // Remove the child safely
     }
-    g_list_free(children);
 }
 
 void main_page(GtkWidget *widget, gpointer data) {
-    GtkWidget *window = gtk_widget_get_toplevel(widget);  
+    GtkWidget *window = GTK_WIDGET(gtk_widget_get_root(widget));  
     game_mode = GPOINTER_TO_INT(data);
 
     clear_window(window);
@@ -316,7 +317,7 @@ void main_page(GtkWidget *widget, gpointer data) {
     if (game_mode == 1) {
         g_print("1 Player game mode selected.\n");
         clear_window(window);
-        gameBoard_mode2(window);
+        gameBoard_mode1(window);
 
     } else if (game_mode == 2) {
         g_print("2 Players game mode selected.\n");
@@ -324,8 +325,7 @@ void main_page(GtkWidget *widget, gpointer data) {
         gameBoard_mode2(window);
 
     }
-
-     gtk_widget_show_all(window);
+    gtk_widget_set_visible(window, TRUE);
 }
 
     
@@ -359,48 +359,86 @@ void inputHandler(GtkWidget *widget, gpointer data) {
     }
 }
 
-void gameBoard_mode2(GtkWidget *window){
-    //Scoreboard label
+void gameBoard_mode1(GtkWidget *window) {
+    // Scoreboard label
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_container_add(GTK_CONTAINER(window), vbox); 
+    gtk_window_set_child(GTK_WINDOW(window), vbox); 
     status_label = gtk_label_new("Player 1's Turn");
     gtk_widget_set_name(status_label, "label");
     gtk_widget_set_halign(status_label, GTK_ALIGN_CENTER);
-    gtk_box_pack_start(GTK_BOX(vbox), status_label, FALSE, FALSE, 10);
+    gtk_box_append(GTK_BOX(vbox), status_label);
 
     result_label = gtk_label_new("");  // Empty label initially
     gtk_widget_set_name(result_label, "result-label");
-    gtk_box_pack_start(GTK_BOX(vbox), result_label, FALSE, FALSE, 10);
+    gtk_box_append(GTK_BOX(vbox), result_label);
 
     GtkWidget *grid = gtk_grid_new();
-    gtk_container_add(GTK_CONTAINER(window), grid);
     gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
     gtk_widget_set_valign(grid, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(vbox), grid);
 
-    //Creating 9 buttons on the grid
-      for (int i = 0; i < 9; i++) {
+    // Creating 9 buttons on the grid
+    for (int i = 0; i < 9; i++) {
         buttons[i] = gtk_button_new_with_label("");  // Initially empty
         g_signal_connect(buttons[i], "clicked", G_CALLBACK(inputHandler), GINT_TO_POINTER(i));
         gtk_widget_set_size_request(buttons[i], 200, 200);
         gtk_grid_attach(GTK_GRID(grid), buttons[i], i % 3, i / 3, 1, 1);  // Add to grid
     }
 
-    gtk_box_pack_start(GTK_BOX(vbox), grid, TRUE, TRUE, 10); 
+    GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+     gtk_widget_set_halign(hbox, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(vbox), hbox);
+
+    GtkWidget *reset_button = gtk_button_new_with_label("Reset");
+    g_signal_connect(reset_button, "clicked", G_CALLBACK(resetBoard), window);
+    gtk_widget_set_name(reset_button, "hbox-button");
+    gtk_box_append(GTK_BOX(hbox), reset_button);
+
+    GtkWidget *exit_button = gtk_button_new_with_label("Exit");
+    g_signal_connect(exit_button, "clicked", G_CALLBACK(exitGame), window);
+    gtk_widget_set_name(exit_button, "hbox-button");
+    gtk_box_append(GTK_BOX(hbox), exit_button);
+}
+
+void gameBoard_mode2(GtkWidget *window) {
+    // Scoreboard label
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_window_set_child(GTK_WINDOW(window), vbox);  
+    status_label = gtk_label_new("Player 1's Turn");
+    gtk_widget_set_name(status_label, "label");
+    gtk_widget_set_halign(status_label, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(vbox), status_label);
+
+    result_label = gtk_label_new("");  // Empty label initially
+    gtk_widget_set_name(result_label, "result-label");
+    gtk_box_append(GTK_BOX(vbox), result_label);
+
+    GtkWidget *grid = gtk_grid_new();
+    gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
+    gtk_widget_set_valign(grid, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(vbox), grid);
+
+    // Creating 9 buttons on the grid
+    for (int i = 0; i < 9; i++) {
+        buttons[i] = gtk_button_new_with_label("");  // Initially empty
+        g_signal_connect(buttons[i], "clicked", G_CALLBACK(inputHandler), GINT_TO_POINTER(i));
+        gtk_widget_set_size_request(buttons[i], 200, 200);
+        gtk_grid_attach(GTK_GRID(grid), buttons[i], i % 3, i / 3, 1, 1);  // Add to grid
+    }
 
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
-       
-    GtkWidget *reset_button= gtk_button_new_with_label("Reset");
+    gtk_widget_set_halign(hbox, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(vbox), hbox);
+
+    GtkWidget *reset_button = gtk_button_new_with_label("Reset");
     g_signal_connect(reset_button, "clicked", G_CALLBACK(resetBoard), window);
-    gtk_box_pack_start(GTK_BOX(hbox), reset_button, TRUE, TRUE, 0);
     gtk_widget_set_name(reset_button, "hbox-button");
+    gtk_box_append(GTK_BOX(hbox), reset_button);
 
-    GtkWidget *exit_button= gtk_button_new_with_label("Exit");
+    GtkWidget *exit_button = gtk_button_new_with_label("Exit");
     g_signal_connect(exit_button, "clicked", G_CALLBACK(exitGame), window);
-    gtk_box_pack_start(GTK_BOX(hbox), exit_button, TRUE, TRUE, 0);
     gtk_widget_set_name(exit_button, "hbox-button");
-
-     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 10);
-
+    gtk_box_append(GTK_BOX(hbox), exit_button);
 }
 
 char checkWinner(){
@@ -465,7 +503,6 @@ void endGame(){
     }
 }
 
-
 void resetBoard(GtkWidget *widget, gpointer window){
         for (int row = 0; row < 3; row++) {
         for (int col = 0; col < 3; col++) {
@@ -484,24 +521,73 @@ void resetBoard(GtkWidget *widget, gpointer window){
 }
 
 void exitGame(GtkWidget *widget, gpointer window) {
+    resetBoard(widget,window);
     clear_window(window);
     gameMenu(window);
-    gtk_widget_show_all(window);
+    gtk_widget_set_visible(window, TRUE);
 }
+
+void on_minimize_clicked(GtkWidget *widget, gpointer window) {
+    gtk_window_minimize(GTK_WINDOW(window));
+}
+
+void on_maximize_clicked(GtkWidget *widget, gpointer window) {
+    if (gtk_window_is_maximized(window)) {
+        gtk_window_unmaximize(window);
+    } else {
+        gtk_window_maximize(window);
+    }
+}
+
+void on_close_clicked(GtkWidget *widget, gpointer window) {
+    gtk_window_close(GTK_WINDOW(window));
+}
+
+GtkWidget* headerbar(GtkWidget *window) {
+   GtkWidget *header_bar = gtk_header_bar_new();
+    gtk_header_bar_set_show_title_buttons(GTK_HEADER_BAR(header_bar), FALSE);  // Hide default buttons
+
+    // Application icon
+    GtkWidget *app_icon = gtk_image_new_from_icon_name("applications-games-symbolic");
+    gtk_header_bar_pack_start(GTK_HEADER_BAR(header_bar), app_icon);
+
+    // Close button
+    GtkWidget *close_button = gtk_button_new_from_icon_name("window-close-symbolic");
+    g_signal_connect(close_button, "clicked", G_CALLBACK(on_close_clicked), window);
+    gtk_header_bar_pack_end(GTK_HEADER_BAR(header_bar), close_button);
+
+    // Maximize button
+    GtkWidget *maximize_button = gtk_button_new_from_icon_name("window-maximize-symbolic");
+    g_signal_connect(maximize_button, "clicked", G_CALLBACK(on_maximize_clicked), window);
+    gtk_header_bar_pack_end(GTK_HEADER_BAR(header_bar), maximize_button);
+
+    // Minimize button
+    GtkWidget *minimize_button = gtk_button_new_from_icon_name("window-minimize-symbolic");
+    g_signal_connect(minimize_button, "clicked", G_CALLBACK(on_minimize_clicked), window);
+    gtk_header_bar_pack_end(GTK_HEADER_BAR(header_bar), minimize_button);
+
+
+
+    return header_bar;
+}
+
+
 
 static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *window;
 
     // Create a new window associated with the application
     window = gtk_application_window_new(app);
-    gtk_window_set_title(GTK_WINDOW(window), "Tic Tac Toe");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 900);
+
+    GtkWidget *header_bar = headerbar(window);
+    gtk_window_set_titlebar(GTK_WINDOW(window), header_bar);
 
     load_css();
     gameMenu(window);
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-
-    gtk_widget_show_all(window);
+    g_signal_connect(window, "destroy", G_CALLBACK(g_application_quit), app);
+    gtk_widget_set_visible(window, TRUE);
+    
 }
 
 int main(int argc, char *argv[]) {
