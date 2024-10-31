@@ -1,5 +1,5 @@
 # TicTacToe_Project
-**Installing GTK 3.0**
+**Installing GTK 4.0**
 1. Download MSYS2 Installer from https://www.msys2.org/
 2. Install MSYS2 and open the MSYS2 Shell
 3. Update the package database
