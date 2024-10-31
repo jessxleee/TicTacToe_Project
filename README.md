@@ -8,7 +8,7 @@
 ```
 4. Install GTK with :
 ```bash 
-pacman -S mingw-w64-x86_64-gtk3'
+pacman -S mingw-w64-x86_64-gtk4'
 ```
 
 **Compiling GTK Application**
@@ -16,7 +16,7 @@ pacman -S mingw-w64-x86_64-gtk3'
 ```bash
   "includePath": [
                "${workspaceFolder}/**",
-                "C:/msys64/mingw64/include/gtk-3.0",
+                "C:/msys64/mingw64/include/gtk-4.0",
                 "C:/msys64/mingw64/include/glib-2.0",
                 "C:/msys64/mingw64/lib/glib-2.0/include",
                 "C:/msys64/mingw64/include/gdk-pixbuf-2.0",
@@ -38,7 +38,7 @@ pacman -S mingw-w64-x86_64-gtk3'
    ```
 4. Compile and run the program:
 ```bash
- gcc index.c -o index $(pkg-config --cflags --libs gtk+-3.0)
+ gcc index.c -o index $(pkg-config --cflags --libs gtk4)
  ./index.c
 ```
 5. if gcc command not found, install GCC for the 64-bit environment:
