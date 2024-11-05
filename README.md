@@ -8,7 +8,7 @@
 ```
 4. Install GTK with :
 ```bash 
-pacman -S mingw-w64-x86_64-gtk4'
+pacman -S mingw-w64-x86_64-gtk4
 ```
 
 **Compiling GTK Application**
