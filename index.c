@@ -14,6 +14,7 @@ int player_turn = 1; // 1 for X, 2 for O
 char player = 'X', opponent ='O'; //Identify player and opponent
 GtkWidget *status_label;
 GtkWidget *result_label;
+const char *selected_difficulty = "Easy"; 
 
 /*Datatype structure to represent board*/
 struct Move
@@ -21,6 +22,10 @@ struct Move
     int row,col; /*row and column of move*/
 };
 
+struct WinnerResult {
+    char winner;
+    int winning_cells[3];
+};
 
 void gameMenu();
 void main_page();
@@ -30,9 +35,9 @@ int MovesLeft();
 int minmax(int depth, bool ismax);
 struct Move find_best_move();
 void getGtkBoardState();
-char checkWinner();
+struct WinnerResult checkWinner();
 bool checkTie();
-void printWinner(char winner);
+void printWinner();
 void endGame();
 void resetBoard();
 void exitGame();
@@ -46,6 +51,16 @@ void load_css() {
 
     gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
     g_object_unref(provider);  // Free the provider after use
+}
+
+void on_difficulty_changed(GtkDropDown *dropdown, GParamSpec *pspec, gpointer user_data) {
+    GtkStringObject *selected_item = GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(dropdown));
+    if (selected_item != NULL) {
+        const char *difficulty = gtk_string_object_get_string(selected_item);
+        
+        selected_difficulty = difficulty; 
+        g_print("Difficulty changed to: %s\n", difficulty); 
+    }
 }
 
 
@@ -261,8 +276,9 @@ void computer_Move() {
         player_turn = 1;  // Switch back to player 1
         gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");  // Update status
 
-        char winner = checkWinner();  // Check for a winner
+        struct WinnerResult winner = checkWinner();
         printWinner(winner);
+
     }
 }
 
@@ -350,7 +366,7 @@ void inputHandler(GtkWidget *widget, gpointer data) {
         char currentBoard[3][3];
         getGtkBoardState(currentBoard);
 
-        char winner = checkWinner();
+        struct WinnerResult winner = checkWinner();
         printWinner(winner);
 
         if (game_mode == 1 && player_turn == 2) {
@@ -360,9 +376,25 @@ void inputHandler(GtkWidget *widget, gpointer data) {
 }
 
 void gameBoard_mode1(GtkWidget *window) {
-    // Scoreboard label
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_window_set_child(GTK_WINDOW(window), vbox); 
+
+     // Difficulty dropdown
+     GtkStringList *string_list = gtk_string_list_new((const char *[]) {"Easy", "Normal", "Hard", NULL});
+    GtkWidget *dropdown = gtk_drop_down_new(G_LIST_MODEL(string_list), NULL);
+
+    // Set the ID for CSS styling and alignment
+    gtk_widget_set_name(dropdown, "dropdown");
+    gtk_widget_set_size_request(dropdown, 70, 30);  // Set dropdown size
+    gtk_widget_set_halign(dropdown, GTK_ALIGN_START);  // Align to the left
+
+    // Connect the signal to handle selection changes
+    g_signal_connect(dropdown, "notify::selected", G_CALLBACK(on_difficulty_changed), NULL);
+
+    // Add dropdown to the vbox
+    gtk_box_append(GTK_BOX(vbox), dropdown);
+
+    // Scoreboard label
     status_label = gtk_label_new("Player 1's Turn");
     gtk_widget_set_name(status_label, "label");
     gtk_widget_set_halign(status_label, GTK_ALIGN_CENTER);
@@ -441,30 +473,52 @@ void gameBoard_mode2(GtkWidget *window) {
     gtk_box_append(GTK_BOX(hbox), exit_button);
 }
 
-char checkWinner(){
+struct WinnerResult checkWinner(){
 
+    struct WinnerResult result;
+    result.winner = '\0';
     //check rows
     for(int row = 0; row < 3; row++){
-        if (board[row][0] == board[row][1] &&  board[row][0] == board[row][2]){
-            return board[row][0];
+        if (board[row][0] != '\0' && board[row][0] == board[row][1] &&  board[row][0] == board[row][2]){
+            result.winning_cells[0] = row * 3 + 0;
+            result.winning_cells[1] = row * 3 + 1;
+            result.winning_cells[2] = row * 3 + 2;
+            result.winner = board[row][0];
+            printf("Winning cells in row %d: %d, %d, %d\n", row, result.winning_cells[0], result.winning_cells[1], result.winning_cells[2]);
+            return result;
         }
     }
     // check columns
     for(int col = 0; col < 3; col++){  
-        if (board[0][col] == board[1][col] && board[0][col] == board[2][col]){
-            return board[0][col];
+        if (board[0][col] != '\0' && board[0][col] == board[1][col] && board[0][col] == board[2][col]){
+            result.winning_cells[0] = 0 * 3 + col;
+            result.winning_cells[1] = 1 * 3 + col;
+            result.winning_cells[2] = 2 * 3 + col;
+            result.winner =  board[0][col];
+            printf("Winning cells in column %d: %d, %d, %d\n", col, result.winning_cells[0], result.winning_cells[1], result.winning_cells[2]);
+            return result;
         }
     }
     // check diagonal
-    if (board[0][0] == board[1][1] && board[1][1] == board[2][2]){
-        return board[0][0];
+    if (board[0][0] != '\0' && board[0][0] == board[1][1] && board[1][1] == board[2][2]){
+        result.winning_cells[0] = 0 * 3 + 0;
+        result.winning_cells[1] = 1 * 3 + 1;
+        result.winning_cells[2] = 2 * 3 + 2;
+        result.winner = board[0][0];
+        printf("Winning cells in diagonal: %d, %d, %d\n", result.winning_cells[0], result.winning_cells[1], result.winning_cells[2]);
+        return result;
     }
 
-    if (board[0][2] == board[1][1] && board[1][1] == board[2][0]){
-        return board[0][2];
+    if (board[0][2] != '\0' && board[0][2] == board[1][1] && board[1][1] == board[2][0]){
+        result.winning_cells[0] = 0 * 3 + 2;
+        result.winning_cells[1] = 1 * 3 + 1;
+        result.winning_cells[2] = 2 * 3 + 0;
+        result.winner = board[0][2];
+;       printf("Winning cells in anti-diagonal: %d, %d, %d\n", result.winning_cells[0], result.winning_cells[1], result.winning_cells[2]);
+        return result;
     }
 
-    return '\0';
+    return result;
 }
 
 bool checkTie(){
@@ -478,24 +532,33 @@ bool checkTie(){
     return true;
 }
 
-void printWinner(char winner){
-    if (winner == '\0' && checkTie()){
+void highlight_winning_cells(int cell1, int cell2, int cell3){
+    gtk_widget_remove_css_class(buttons[cell1], "default-cell");
+    gtk_widget_remove_css_class(buttons[cell2], "default-cell");
+    gtk_widget_remove_css_class(buttons[cell3], "default-cell");
+    
+    gtk_widget_add_css_class(buttons[cell1], "winning-cells");
+    gtk_widget_add_css_class(buttons[cell2], "winning-cells");
+    gtk_widget_add_css_class(buttons[cell3], "winning-cells");
+
+     g_print("Highlighting cells: %d, %d, %d\n", cell1, cell2, cell3);
+}
+
+void printWinner(struct WinnerResult result){
+    if (result.winner == '\0' && checkTie()){
         g_print("\nIt is a tie!\n");
         gtk_label_set_text(GTK_LABEL(result_label), "It is a tie!");
         endGame();
     }   
-    else if (winner == 'X'){
-        g_print("\nPlayer 1 Wins!\n");
-        gtk_label_set_text(GTK_LABEL(result_label), "Player 1 Wins!");
-        endGame();
-    }
-    else if (winner == 'O'){
-        g_print("\nPlayer 2 wins!\n");
-        gtk_label_set_text(GTK_LABEL(result_label), "Player 2 Wins!");
+    else if (result.winner == 'X' || result.winner == 'O') {
+        g_print("\nPlayer %c Wins!\n", (result.winner == 'X') ? '1' : '2');
+        gtk_label_set_text(GTK_LABEL(result_label), (result.winner == 'X') ? "Player 1 Wins!" : "Player 2 Wins!");
+        highlight_winning_cells(result.winning_cells[0], result.winning_cells[1], result.winning_cells[2]); 
         endGame();
     }
     else{}
 }
+
 
 void endGame(){
     for(int i = 0; i < 9; i++){
@@ -512,12 +575,14 @@ void resetBoard(GtkWidget *widget, gpointer window){
 
     for (int i = 0; i < 9; i++) {
         gtk_button_set_label(GTK_BUTTON(buttons[i]), "");  // Clear button text
+        gtk_widget_set_name(buttons[i], "default-cell");   // Reset to default style
         gtk_widget_set_sensitive(buttons[i], TRUE);  // Enable all buttons
     }
 
     player_turn = 1;
     gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");  // Reset status label
     gtk_label_set_text(GTK_LABEL(result_label), "");  // Clear the result label
+    g_print("\nGame has been reset.\n");
 }
 
 void exitGame(GtkWidget *widget, gpointer window) {
@@ -525,6 +590,7 @@ void exitGame(GtkWidget *widget, gpointer window) {
     clear_window(window);
     gameMenu(window);
     gtk_widget_set_visible(window, TRUE);
+    g_print("\nExit Game.\n");
 }
 
 void on_minimize_clicked(GtkWidget *widget, gpointer window) {
@@ -590,6 +656,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     
 }
 
+
 int main(int argc, char *argv[]) {
     GtkApplication *app;
     int status;
@@ -606,6 +673,7 @@ int main(int argc, char *argv[]) {
 
     return status;
 }
+
 
 
 

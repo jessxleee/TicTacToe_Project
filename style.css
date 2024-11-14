@@ -1,99 +1,120 @@
-/* Style for the header bar */
-headerbar {
-    background-color: #1f1f1f; /* Dark background color */           /* White text color */
-    padding: 0px 10px;
-    border-bottom: 1px solid #333; /* Bottom border for separation */
-}
+    /* Style for the header bar */
+    headerbar {
+        background-color: #1f1f1f; /* Dark background color */           /* White text color */
+        padding: 0px 10px;
+        border-bottom: 1px solid #333; /* Bottom border for separation */
+    }
 
 
-headerbar button {
-    background-color: none; /* Transparent background for buttons */
-    border: none;                  /* Remove button border */
-    padding: 5px;
-    margin: 5px 2px;
-}
+    headerbar button {
+        background-color: none; /* Transparent background for buttons */
+        border: none;                  /* Remove button border */
+        padding: 5px;
+        margin: 5px 2px;
+    }
 
-headerbar button:hover {
-    background-color: #3c3c3c; 
-}
+    headerbar button:hover {
+        background-color: #3c3c3c; 
+    }
 
-#heading{
-    font-size: 48px;
-    color: black;
-    font-weight: bold;
-}
+    #heading{
+        font-size: 48px;
+        color: black;
+        font-weight: bold;
+    }
 
-#players-button {
-    font-size: 24px;
-    background-color: #f0f0f0;
-    width: 100px;
-    margin: 5px;
-    padding: 20px 30px;
-    border-radius: 5px;
-    border: 2px solid black ;
-}
+    #players-button {
+        font-size: 24px;
+        background-color: #f0f0f0;
+        width: 100px;
+        margin: 5px;
+        padding: 20px 30px;
+        border-radius: 5px;
+        border: 2px solid black ;
+    }
 
-#players-button:hover {
-    background-color: #6C9BCF;
-}
+    #players-button:hover {
+        background-color: #6C9BCF;
+    }
 
-button {
-    background-color: #f0f0f0;
-    font-size: 48px;          
-    font-weight: bold;         
-    color: #2c3e50;            
-    padding: 20px;            
-    border: 3px solid #bdc3c7; 
-    border-radius: 10px;       
-    width: 100px;              
-    height: 100px;           
-    box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2); 
-    transition: background-color 0.3s ease, box-shadow 0.3s ease;
-}
+    button {
+        background-color: #f0f0f0;
+        font-size: 48px;          
+        font-weight: bold;         
+        color: #2c3e50;            
+        padding: 20px;            
+        border: 3px solid #bdc3c7; 
+        border-radius: 10px;       
+        width: 100px;              
+        height: 100px;           
+        box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2); 
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
 
-button:hover {
-    background-color: #ecf0f1; 
-    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3); 
-}
+    button:hover {
+        background-color: #ecf0f1; 
+        box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3); 
+    }
 
-button:active {
-    background-color: #95a5a6; 
-    box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.5); 
-}
+    button:active {
+        background-color: #95a5a6; 
+        box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.5); 
+    }
 
-#label{
-    font-size: 24px;
-    font-weight: bold;
-    text-align: center;
-    padding: 20px;
-    color: #2c3e50;
-    background-color: #40E0D0;
-    border-radius: 5px;
-    border: 2px solid white;
-    width: 500px;
+    #label{
+        font-size: 24px;
+        font-weight: bold;
+        text-align: center;
+        padding: 20px;
+        margin: 10px 10px;
+        color: #2c3e50;
+        background-color: #40E0D0;
+        border-radius: 5px;
+        border: 2px solid white;
+        width: 500px;
 
-}
+    }
 
-#result-label{
-    font-size: 36px;
-    font-weight: bold;
-    color: black;
-}
+    #result-label{
+        font-size: 36px;
+        font-weight: bold;
+        color: black;
+    }
 
-#hbox-button{
-    background: none; 
-    border: none; 
-    color: #40E0D0; 
-    font-size: 18px;
-    font-weight: bold;
-    padding: 10px;
-    margin: 0 10px;
-    text-align: center; 
-    cursor: pointer;  
-    box-shadow: none;
-}
+    .winning-cells {
+        background:#40E0D0;
+        color: black ;                  
+    }
+    
+    #default-cell {
+        background-color: white;  /* Default color */
+        color: black;
+    }
 
-#hbox-button:hover{
-    color: black;
-    text-decoration: underline;
-}
+    #dropdown * {
+        font-size: 24px;   
+        padding: 2px;          
+        border: none; 
+        box-shadow: none;            
+        margin-left: 5px;
+        text-align: center;
+    }
+
+
+    #hbox-button{
+        background: none; 
+        border: none; 
+        color: #40E0D0; 
+        font-size: 18px;
+        font-weight: bold;
+        padding: 10px;
+        margin: 0 10px;
+        text-align: center; 
+        cursor: pointer;  
+        box-shadow: none;
+    }
+
+    #hbox-button:hover{
+        color: black;
+        text-decoration: underline;
+    }
