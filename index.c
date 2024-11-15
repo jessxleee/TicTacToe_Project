@@ -27,6 +27,8 @@ struct WinnerResult {
     int winning_cells[3];
 };
 
+struct WinnerResult result;
+
 void gameMenu();
 void main_page();
 void gameBoard_mode1();
@@ -495,7 +497,6 @@ struct WinnerResult checkWinner(){
             result.winning_cells[1] = 1 * 3 + col;
             result.winning_cells[2] = 2 * 3 + col;
             result.winner =  board[0][col];
-            printf("Winning cells in column %d: %d, %d, %d\n", col, result.winning_cells[0], result.winning_cells[1], result.winning_cells[2]);
             return result;
         }
     }
@@ -505,7 +506,6 @@ struct WinnerResult checkWinner(){
         result.winning_cells[1] = 1 * 3 + 1;
         result.winning_cells[2] = 2 * 3 + 2;
         result.winner = board[0][0];
-        printf("Winning cells in diagonal: %d, %d, %d\n", result.winning_cells[0], result.winning_cells[1], result.winning_cells[2]);
         return result;
     }
 
@@ -514,7 +514,6 @@ struct WinnerResult checkWinner(){
         result.winning_cells[1] = 1 * 3 + 1;
         result.winning_cells[2] = 2 * 3 + 0;
         result.winner = board[0][2];
-;       printf("Winning cells in anti-diagonal: %d, %d, %d\n", result.winning_cells[0], result.winning_cells[1], result.winning_cells[2]);
         return result;
     }
 
@@ -540,8 +539,6 @@ void highlight_winning_cells(int cell1, int cell2, int cell3){
     gtk_widget_add_css_class(buttons[cell1], "winning-cells");
     gtk_widget_add_css_class(buttons[cell2], "winning-cells");
     gtk_widget_add_css_class(buttons[cell3], "winning-cells");
-
-     g_print("Highlighting cells: %d, %d, %d\n", cell1, cell2, cell3);
 }
 
 void printWinner(struct WinnerResult result){
@@ -566,19 +563,29 @@ void endGame(){
     }
 }
 
-void resetBoard(GtkWidget *widget, gpointer window){
-        for (int row = 0; row < 3; row++) {
+void resetBoard(GtkWidget *widget, gpointer window) {
+    // Clear the game board array
+    for (int row = 0; row < 3; row++) {
         for (int col = 0; col < 3; col++) {
             board[row][col] = '\0';  // Reset each cell to empty
         }
     }
 
+    // Reset button labels, CSS classes, and enable buttons
     for (int i = 0; i < 9; i++) {
         gtk_button_set_label(GTK_BUTTON(buttons[i]), "");  // Clear button text
-        gtk_widget_set_name(buttons[i], "default-cell");   // Reset to default style
+        gtk_widget_remove_css_class(buttons[i], "winning-cells");   // Remove "winning-cells" class
         gtk_widget_set_sensitive(buttons[i], TRUE);  // Enable all buttons
     }
 
+    // Reset the winning cells in the global `result` struct
+    result.winner = '\0';  // Clear the winner character
+    for (int i = 0; i < 3; i++) {
+        result.winning_cells[i] = -1;  // Set to -1 to indicate no winning cells
+    }
+    load_css();
+
+    // Reset other game state variables
     player_turn = 1;
     gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");  // Reset status label
     gtk_label_set_text(GTK_LABEL(result_label), "");  // Clear the result label
