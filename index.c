@@ -486,7 +486,6 @@ struct WinnerResult checkWinner(){
             result.winning_cells[1] = row * 3 + 1;
             result.winning_cells[2] = row * 3 + 2;
             result.winner = board[row][0];
-            printf("Winning cells in row %d: %d, %d, %d\n", row, result.winning_cells[0], result.winning_cells[1], result.winning_cells[2]);
             return result;
         }
     }
