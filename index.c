@@ -1,7 +1,7 @@
 #include <gtk/gtk.h>
 #include <stdbool.h>
 #include <cairo.h>
-#include <minmax.h>
+//#include <minmax.h>
 #include <limits.h>
 #include <stdio.h>
 
@@ -54,6 +54,43 @@ void load_css() {
     gtk_style_context_add_provider_for_display(display, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
     g_object_unref(provider);  // Free the provider after use
 }
+
+/* NAIVE BAYES */
+/* Function to execute classification.py using Popen and retrieve the Naive Bayes move */
+struct Move get_naive_bayes_move() {
+    FILE *fp;
+    char path[1035];
+    struct Move best_move = {-1, -1}; // Default to invalid move
+    
+    // Construct the command with the board state
+    char command[256] = "python3 naive-bayes/classification.py";
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            char cell[3];
+            sprintf(cell, " %c", board[i][j] == '\0' ? 'b' : board[i][j]);
+            strcat(command, cell);
+        }
+    }
+
+    // Open the command for reading
+    fp = popen(command, "r");
+    if (fp == NULL) {
+        printf("Failed to run command\n");
+        return best_move;
+    }
+
+    // Read the output a line at a time - output expected as "row col"
+    if (fgets(path, sizeof(path), fp) != NULL) {
+        sscanf(path, "%d %d", &best_move.row, &best_move.col);
+    }
+
+    // Close the process
+    pclose(fp);
+
+    return best_move;
+}
+
+
 
 void on_difficulty_changed(GtkDropDown *dropdown, GParamSpec *pspec, gpointer user_data) {
     GtkStringObject *selected_item = GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(dropdown));
@@ -269,7 +306,16 @@ void getCurrentBoardState(char output[3][3]) {
 }
 
 void computer_Move() {
-    struct Move best_move = find_best_move(board);  // Get the best move using Minimax
+    struct Move best_move;
+
+        // Check the selected difficulty and use the appropriate method
+    if (strcmp(selected_difficulty, "Naive") == 0) {
+        // Use the Naive Bayes model to determine the move
+        best_move = get_naive_bayes_move();
+    } else {
+        // Use the Minimax algorithm for other difficulty levels
+        best_move = find_best_move();
+    }
 
     if (best_move.row != -1 && best_move.col != -1) {  // Check if a valid move was found
         board[best_move.row][best_move.col] = 'O';  // Update the board
@@ -284,6 +330,23 @@ void computer_Move() {
     }
 }
 
+/*
+void computer_Move() {
+    struct Move best_move = find_best_move(board);  // Get the best move using Minimax
+
+    if (best_move.row != -1 && best_move.col != -1) {  // Check if a valid move was found
+        board[best_move.row][best_move.col] = 'O';  // Update the board
+        gtk_button_set_label(GTK_BUTTON(buttons[best_move.row * 3 + best_move.col]), "O");  // Update the button label
+
+        player_turn = 1;  // Switch back to player 1
+        gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");  // Update status
+
+        struct WinnerResult winner = checkWinner();
+        printWinner(winner);
+
+    }
+}
+*/
 
 void gameMenu(GtkWidget *window){
     GtkWidget *box;
@@ -382,7 +445,7 @@ void gameBoard_mode1(GtkWidget *window) {
     gtk_window_set_child(GTK_WINDOW(window), vbox); 
 
      // Difficulty dropdown
-     GtkStringList *string_list = gtk_string_list_new((const char *[]) {"Easy", "Normal", "Hard", NULL});
+     GtkStringList *string_list = gtk_string_list_new((const char *[]) {"Easy", "Normal", "Hard", "Naive", NULL});
     GtkWidget *dropdown = gtk_drop_down_new(G_LIST_MODEL(string_list), NULL);
 
     // Set the ID for CSS styling and alignment
