@@ -1,9 +1,12 @@
+#define SDL_MAIN_HANDLED
 #include <gtk/gtk.h>
 #include <stdbool.h>
 #include <cairo.h>
-//#include <minmax.h>
 #include <limits.h>
 #include <stdio.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
+
 
 // Game State Variables
 char board[3][3];
@@ -15,6 +18,10 @@ char player = 'X', opponent ='O'; //Identify player and opponent
 GtkWidget *status_label;
 GtkWidget *result_label;
 const char *selected_difficulty = "Easy"; 
+Mix_Music *bgMusic = NULL;            // Background music
+Mix_Chunk *clickSound = NULL;         // Click sound effect
+Mix_Chunk *buttonClicks = NULL;
+Mix_Chunk *gamewinSound = NULL;
 
 /*Datatype structure to represent board*/
 struct Move
@@ -43,6 +50,72 @@ void printWinner();
 void endGame();
 void resetBoard();
 void exitGame();
+
+void load_sounds() {
+    bgMusic = Mix_LoadMUS("sounds/background.wav");
+    if (!bgMusic) {
+        printf("Failed to load background music: %s\n", Mix_GetError());
+    }
+
+    clickSound = Mix_LoadWAV("sounds/clicks.wav");
+    if (!clickSound) {
+        printf("Failed to load click sound: %s\n", Mix_GetError());
+    }
+
+    buttonClicks = Mix_LoadWAV("sounds/button-clicks.wav");
+    if(!buttonClicks){
+         printf("Failed to load button-clicks sound: %s\n", Mix_GetError());
+    }
+
+    gamewinSound = Mix_LoadWAV("sounds/game-win.wav");
+    if (!gamewinSound) {
+        printf("Failed to load game-win sound: %s\n", Mix_GetError());
+    }
+}
+
+// Function to initialize background music
+void background_music() {
+        Mix_PlayMusic(bgMusic, -1); // Loop indefinitely
+        Mix_VolumeMusic(MIX_MAX_VOLUME);
+}
+
+void click_sounds() {
+     Mix_PlayChannel(-1, clickSound, 0); // Play click sound
+     Mix_Volume(-1, MIX_MAX_VOLUME); // Set for all channels
+}
+
+void buttonClicks_sounds(){
+     Mix_PlayChannel(-1, buttonClicks, 0); // Play click sound
+     Mix_Volume(-1, MIX_MAX_VOLUME); // Set for all channels
+}
+
+void gamewin_sounds(){
+    if (Mix_PlayingMusic()) {
+        Mix_HaltMusic();
+    }
+   Mix_PlayChannel(-1, gamewinSound, 0); // Play win sound
+   Mix_Volume(-1, MIX_MAX_VOLUME); // Set for all channels
+
+    if (bgMusic != NULL) {
+        Mix_PlayMusic(bgMusic, -1); // Loop the background music
+    }
+}
+
+void cleanup_sounds() {
+    if (clickSound != NULL) {
+        Mix_FreeChunk(clickSound);
+        clickSound = NULL;
+    }
+    if(gamewinSound != NULL){
+        Mix_FreeChunk(gamewinSound);
+        gamewinSound = NULL;
+    }
+    if (bgMusic != NULL) {
+        Mix_FreeMusic(bgMusic);
+        bgMusic = NULL;
+    }
+    Mix_CloseAudio();
+}
 
 void load_css() {
     GtkCssProvider *provider = gtk_css_provider_new();
@@ -390,6 +463,7 @@ void clear_window(GtkWidget *window) {
 }
 
 void main_page(GtkWidget *widget, gpointer data) {
+    click_sounds();
     GtkWidget *window = GTK_WIDGET(gtk_widget_get_root(widget));  
     game_mode = GPOINTER_TO_INT(data);
 
@@ -418,12 +492,14 @@ void inputHandler(GtkWidget *widget, gpointer data) {
         if (player_turn == 1) {
             gtk_button_set_label(GTK_BUTTON(widget), "X");
             board[row][col] = 'X';
+            buttonClicks_sounds();
             player_turn = 2;
             gtk_label_set_text(GTK_LABEL(status_label), "Player 2's Turn");
 
         } else {
             gtk_button_set_label(GTK_BUTTON(widget), "O");
             board[row][col] = 'O';
+            buttonClicks_sounds();
             player_turn = 1;
             gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");
         }
@@ -614,6 +690,7 @@ void printWinner(struct WinnerResult result){
         gtk_label_set_text(GTK_LABEL(result_label), (result.winner == 'X') ? "Player 1 Wins!" : "Player 2 Wins!");
         highlight_winning_cells(result.winning_cells[0], result.winning_cells[1], result.winning_cells[2]); 
         endGame();
+        gamewin_sounds();
     }
     else{}
 }
@@ -626,6 +703,7 @@ void endGame(){
 }
 
 void resetBoard(GtkWidget *widget, gpointer window) {
+    click_sounds();
     // Clear the game board array
     for (int row = 0; row < 3; row++) {
         for (int col = 0; col < 3; col++) {
@@ -729,16 +807,22 @@ static void activate(GtkApplication *app, gpointer user_data) {
 int main(int argc, char *argv[]) {
     GtkApplication *app;
     int status;
+    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024);
+    load_sounds();
+    
 
     // Create a new application
     app = gtk_application_new("com.example.tictactoe", G_APPLICATION_DEFAULT_FLAGS);
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
+    background_music();
 
     // Run the application
     status = g_application_run(G_APPLICATION(app), argc, argv);
+    
 
     // Clean up the application object
     g_object_unref(app);
+    cleanup_sounds();
 
     return status;
 }

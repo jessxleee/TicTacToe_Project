@@ -82,8 +82,9 @@
     }
 
     .winning-cells {
-        background:#40E0D0;
-        color: black ;                  
+        background:#a4f0e8;
+        color: black ;  
+        border-color: black;                
     }
 
     #dropdown * {
