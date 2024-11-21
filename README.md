@@ -8,7 +8,7 @@
 ```
 4. Install GTK with :
 ```bash 
-pacman -S mingw-w64-x86_64-gtk4'
+pacman -S mingw-w64-x86_64-gtk4
 ```
 
 **Compiling GTK Application**
@@ -36,12 +36,17 @@ pacman -S mingw-w64-x86_64-gtk4'
    ```bash
    cd: Users/user/TicTacToe_Project
    ```
-4. Compile and run the program:
+4. Compile the program.
 ```bash
  gcc index.c -o index $(pkg-config --cflags --libs gtk4)
- ./index.c
 ```
-5. if gcc command not found, install GCC for the 64-bit environment:
+
+5. Run the program.
+```bash
+ ./index
+```
+
+6. if gcc command not found, install GCC for the 64-bit environment:
 ```bash
 pacman -S mingw-w64-x86_64-gcc
 ```
