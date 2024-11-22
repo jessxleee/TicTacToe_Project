@@ -1,52 +1,38 @@
 # TicTacToe_Project
+
 **Installing GTK 4.0**
+For windows:
 1. Download MSYS2 Installer from https://www.msys2.org/
 2. Install MSYS2 and open the MSYS2 Shell
 3. Update the package database
 ```bash
     pacman -Syu
 ```
-4. Install GTK with :
+4. Install GTK4 with :
 ```bash 
 pacman -S mingw-w64-x86_64-gtk4
 ```
-
-**Compiling GTK Application**
-1. To ensure that your compilier recognises GTK 3.0, open up you c_cpp_properties.json and include the below into your includePath:
-```bash
-  "includePath": [
-               "${workspaceFolder}/**",
-                "C:/msys64/mingw64/include/gtk-4.0",
-                "C:/msys64/mingw64/include/glib-2.0",
-                "C:/msys64/mingw64/lib/glib-2.0/include",
-                "C:/msys64/mingw64/include/gdk-pixbuf-2.0",
-                "C:/msys64/mingw64/include/pango-1.0",
-                "C:/msys64/mingw64/include/atk-1.0",
-                "C:/msys64/mingw64/include/cairo",
-                "C:/msys64/mingw64/include/SDL2",
-                "C:/msys64/mingw64/include/harfbuzz",
-                "C:/msys64/mingw64/include"
-            ],
-
+Install other dependencies used in the project:
+```bash 
+pacman -S mingw-w64-x86_64-SDL2_mixer
 ```
 
-2. Open up MSYS2 MINGW64 shell (Note: Different from MSYS2 Shell)
-3. Change to your Respository Directory 
+5. Open up MSYS2 MINGW64 shell (Note: Different from MSYS2 Shell)
+6. Change to your Respository Directory 
    Example:
    ```bash
    cd: Users/user/TicTacToe_Project
    ```
-4. Compile the program.
+7. Compile the program.
 ```bash
- gcc index.c -o index $(pkg-config --cflags --libs gtk4)
+make clean
+make
 ```
 
-5. Run the program.
+8. Run the program.
 ```bash
- ./index
+make run
 ```
 
-6. if gcc command not found, install GCC for the 64-bit environment:
-```bash
-pacman -S mingw-w64-x86_64-gcc
-```
+For MacOS:
+

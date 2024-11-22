@@ -23,6 +23,7 @@ Mix_Music *bgMusic = NULL;            // Background music
 Mix_Chunk *clickSound = NULL;         // Click sound effect
 Mix_Chunk *buttonClicks = NULL;
 Mix_Chunk *gamewinSound = NULL;
+Mix_Chunk *gamedrawSound = NULL;
 
 
 struct WinnerResult {
@@ -64,12 +65,16 @@ void load_sounds() {
     if (!gamewinSound) {
         printf("Failed to load game-win sound: %s\n", Mix_GetError());
     }
+    gamedrawSound = Mix_LoadWAV("sounds/game-draw.wav");
+    if (!gamedrawSound) {
+        printf("Failed to load game-win sound: %s\n", Mix_GetError());
+    }
+
 }
 
 // Function to initialize background music
 void background_music() {
         Mix_PlayMusic(bgMusic, -1); // Loop indefinitely
-        Mix_VolumeMusic(MIX_MAX_VOLUME);
 }
 
 void click_sounds() {
@@ -94,12 +99,28 @@ void gamewin_sounds(){
     }
 }
 
+void gamedraw_sounds(){
+    if (Mix_PlayingMusic()) {
+        Mix_HaltMusic();
+    }
+   Mix_PlayChannel(-1, gamedrawSound, 0); // Play Draw sound
+   Mix_Volume(-1, MIX_MAX_VOLUME); // Set for all channels
+
+    if (bgMusic != NULL) {
+        Mix_PlayMusic(bgMusic, -1); // Loop the background music
+    }
+}
+
 void cleanup_sounds() {
     if (clickSound != NULL) {
         Mix_FreeChunk(clickSound);
         clickSound = NULL;
     }
     if(gamewinSound != NULL){
+        Mix_FreeChunk(gamewinSound);
+        gamewinSound = NULL;
+    }
+    if(gamedrawSound != NULL){
         Mix_FreeChunk(gamewinSound);
         gamewinSound = NULL;
     }
@@ -210,6 +231,8 @@ struct Move get_SVM_move() {
 
 
 void on_difficulty_changed(GtkDropDown *dropdown, GParamSpec *pspec, gpointer user_data) {
+    click_sounds();
+    resetBoard();
     GtkStringObject *selected_item = GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(dropdown));
     if (selected_item != NULL) {
         const char *difficulty = gtk_string_object_get_string(selected_item);
@@ -218,9 +241,6 @@ void on_difficulty_changed(GtkDropDown *dropdown, GParamSpec *pspec, gpointer us
         g_print("Difficulty changed to: %s\n", difficulty); 
     }
 }
-
-
-
 
 void getGtkBoardState() {
     for (int i = 0; i < 3; i++) {
@@ -238,7 +258,6 @@ void getGtkBoardState() {
         }
     }
 }
-
 
 void getCurrentBoardState(char output[3][3]) {
     for (int i = 0; i < 3; i++) {
@@ -294,24 +313,6 @@ void computer_Move() {
 
     }
 }
-
-/*
-void computer_Move() {
-    struct Move best_move = find_best_move(board);  // Get the best move using Minimax
-
-    if (best_move.row != -1 && best_move.col != -1) {  // Check if a valid move was found
-        board[best_move.row][best_move.col] = 'O';  // Update the board
-        gtk_button_set_label(GTK_BUTTON(buttons[best_move.row * 3 + best_move.col]), "O");  // Update the button label
-
-        player_turn = 1;  // Switch back to player 1
-        gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");  // Update status
-
-        struct WinnerResult winner = checkWinner();
-        printWinner(winner);
-
-    }
-}
-*/
 
 void gameMenu(GtkWidget *window){
     GtkWidget *box;
@@ -374,8 +375,7 @@ void main_page(GtkWidget *widget, gpointer data) {
     }
     gtk_widget_set_visible(window, TRUE);
 }
-
-    
+   
 void inputHandler(GtkWidget *widget, gpointer data) {
     int row = GPOINTER_TO_INT(data) / 3;
     int col = GPOINTER_TO_INT(data) % 3;
@@ -412,8 +412,8 @@ void gameBoard_mode1(GtkWidget *window) {
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_window_set_child(GTK_WINDOW(window), vbox); 
 
-     // Difficulty dropdown
-     GtkStringList *string_list = gtk_string_list_new((const char *[]) {"Easy", "Normal", "Hard", "Naive", "Epsilon Greedy", "K-Means", "SVM", NULL});
+    // Difficulty dropdown
+    GtkStringList *string_list = gtk_string_list_new((const char *[]) {"Easy", "Normal", "Hard", "Naive", "Epsilon Greedy", "K-Means", "SVM", NULL});
     GtkWidget *dropdown = gtk_drop_down_new(G_LIST_MODEL(string_list), NULL);
 
     // Set the ID for CSS styling and alignment
@@ -433,7 +433,7 @@ void gameBoard_mode1(GtkWidget *window) {
     gtk_widget_set_halign(status_label, GTK_ALIGN_CENTER);
     gtk_box_append(GTK_BOX(vbox), status_label);
 
-    result_label = gtk_label_new("");  // Empty label initially
+   result_label = gtk_label_new("");  // Empty label initially
     gtk_widget_set_name(result_label, "result-label");
     gtk_box_append(GTK_BOX(vbox), result_label);
 
@@ -576,6 +576,7 @@ void printWinner(struct WinnerResult result){
         g_print("\nIt is a tie!\n");
         gtk_label_set_text(GTK_LABEL(result_label), "It is a tie!");
         endGame();
+        gamedraw_sounds();
     }   
     else if (result.winner == 'X' || result.winner == 'O') {
         g_print("\nPlayer %c Wins!\n", (result.winner == 'X') ? '1' : '2');
@@ -586,7 +587,6 @@ void printWinner(struct WinnerResult result){
     }
     else{}
 }
-
 
 void endGame(){
     for(int i = 0; i < 9; i++){
@@ -676,8 +676,6 @@ GtkWidget* headerbar(GtkWidget *window) {
     return header_bar;
 }
 
-
-
 static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *window;
 
@@ -694,7 +692,6 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_widget_set_visible(window, TRUE);
     
 }
-
 
 int main(int argc, char *argv[]) {
     GtkApplication *app;

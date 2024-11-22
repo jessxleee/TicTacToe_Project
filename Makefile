@@ -4,7 +4,7 @@ CFLAGS =$(shell pkg-config --cflags gtk4) -lSDL2 -lSDL2_mixer
 LDFLAGS = $(shell pkg-config --libs gtk4)
 
 # Project files
-SRCS = index.c minimax/perfect.c RL-epsilon-greedy/greedy.c k-means/k-means.c
+SRCS = index.c minimax/perfect.c minimax/minimaxfinal.c naive-bayes/naive.c RL-epsilon-greedy/greedy.c k-means/k-means.c SVM/SVM.c
 OBJS = $(SRCS:.c=.o)
 EXEC = index
 

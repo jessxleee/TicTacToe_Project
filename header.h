@@ -47,4 +47,10 @@ struct Move kmeans_find_best_move(char board[3][3]);
 void loadQ_Table(const char *q_table_100k);  // Function to load q_table file 
 int get_state_index(char board[3][3]);  // Function to convert board to a state string to match Q-Table states
 struct Move get_epsilonGreedy_move(char board[3][3], int player_turn);  // Function to find best move based on q_table
+
+// Functions for Naive Bayes
+struct Move get_naive_bayes_move();
+
+// Function for SVM
+struct Move get_SVM_move();
 #endif
