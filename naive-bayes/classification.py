@@ -1,7 +1,7 @@
 import random
 import sys
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-import matplotlib.pyplot as plt
+# from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+# import matplotlib.pyplot as plt
 
 # Process the dataset for use by the model
 def process_data(data):

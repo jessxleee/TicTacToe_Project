@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import sys
 import joblib
-from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split
+# from sklearn.svm import SVC
+# from sklearn.model_selection import train_test_split
 
 MODEL_PATH = 'SVM/svm_model.pkl'
 
