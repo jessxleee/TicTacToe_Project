@@ -163,7 +163,7 @@ struct Move get_SVM_move() {
     struct Move best_move = {-1, -1}; // Default to invalid move
 
     // Base command with the Python interpreter and script path
-    char command[1024] = "C:/Users/siyi8/AppData/Local/Microsoft/WindowsApps/python3.12.exe SVM/SVM_main.py";
+    char command[1024] = "python3 SVM/SVM_main.py";
 
     // Append the processed board state to the command
     for (int i = 0; i < 3; i++) {
@@ -185,13 +185,17 @@ struct Move get_SVM_move() {
         return best_move;
     }
 
-    // Parse the last line of the output to get the move
+    /*// Parse the last line of the output to get the move
     if (sscanf(path, "%d %d", &best_move.row, &best_move.col) != 2) {
         fprintf(stderr, "Error: Failed to parse Python output\n");
         best_move.row = -1;
         best_move.col = -1;
-    }
+    }*/
 
+    // Read the output a line at a time - output expected as "row col"
+    if (fgets(path, sizeof(path), fp) != NULL) {
+        sscanf(path, "%d %d", &best_move.row, &best_move.col);
+    }
     // Close the process
     if (pclose(fp) != 0) {
         fprintf(stderr, "Error: Command execution failed\n");
@@ -710,7 +714,6 @@ int main(int argc, char *argv[]) {
 
     return status;
 }
-
 
 
 
