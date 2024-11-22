@@ -203,7 +203,11 @@ void computer_Move() {
     if (strcmp(selected_difficulty, "Naive") == 0) {
         // Use the Naive Bayes model to determine the move
         best_move = get_naive_bayes_move();
-    } else {
+    } else if (strcmp(selected_difficulty, "Epsilon Greedy") == 0) {
+        //Use reinforcement learning with Epsilon Greedy model to determine move
+        loadQ_Table("RL-epsilon-greedy/q_table_100k.txt");
+        best_move = get_epsilonGreedy_move(board, player_turn);
+    }else {
         // Use the Minimax algorithm for other difficulty levels
         best_move = find_best_move(board);
     }
@@ -339,7 +343,7 @@ void gameBoard_mode1(GtkWidget *window) {
     gtk_window_set_child(GTK_WINDOW(window), vbox); 
 
      // Difficulty dropdown
-     GtkStringList *string_list = gtk_string_list_new((const char *[]) {"Easy", "Normal", "Hard", "Naive", NULL});
+     GtkStringList *string_list = gtk_string_list_new((const char *[]) {"Easy", "Normal", "Hard", "Naive", "Epsilon Greedy", NULL});
     GtkWidget *dropdown = gtk_drop_down_new(G_LIST_MODEL(string_list), NULL);
 
     // Set the ID for CSS styling and alignment
