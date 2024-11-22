@@ -207,9 +207,23 @@ void computer_Move() {
         //Use reinforcement learning with Epsilon Greedy model to determine move
         loadQ_Table("RL-epsilon-greedy/q_table_100k.txt");
         best_move = get_epsilonGreedy_move(board, player_turn);
-    }else {
+    }else if (strcmp(selected_difficulty, "Hard") == 0){
         // Use the Minimax algorithm for other difficulty levels
         best_move = find_best_move(board);
+    }
+    else if (strcmp(selected_difficulty, "Easy") == 0) {
+        // Use the Minimax algorithm for other difficulty levels
+        best_move = diff_find_best_move(board);
+    }
+    else if (strcmp(selected_difficulty, "Normal") == 0) {
+        // Use the Minimax algorithm for other difficulty levels
+        best_move = diff_find_best_move(board);
+    }
+    else if (strcmp(selected_difficulty, "K-Means") == 0) {
+        // Load centroids from the file
+        load_centroids("k-means/centroids.csv");
+        // Use the K-Means algorithm to determine move
+        best_move = kmeans_find_best_move(board);
     }
 
     if (best_move.row != -1 && best_move.col != -1) {  // Check if a valid move was found
@@ -343,7 +357,7 @@ void gameBoard_mode1(GtkWidget *window) {
     gtk_window_set_child(GTK_WINDOW(window), vbox); 
 
      // Difficulty dropdown
-     GtkStringList *string_list = gtk_string_list_new((const char *[]) {"Easy", "Normal", "Hard", "Naive", "Epsilon Greedy", NULL});
+     GtkStringList *string_list = gtk_string_list_new((const char *[]) {"Easy", "Normal", "Hard", "Naive", "Epsilon Greedy", "K-Means", NULL});
     GtkWidget *dropdown = gtk_drop_down_new(G_LIST_MODEL(string_list), NULL);
 
     // Set the ID for CSS styling and alignment
