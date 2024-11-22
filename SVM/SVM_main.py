@@ -5,7 +5,7 @@ import joblib
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 
-MODEL_PATH = 'svm_model.pkl'
+MODEL_PATH = 'SVM/svm_model.pkl'
 
 def load_model_or_train(data_path, model_path):
     try:
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         board_state = list(map(int, sys.argv[1:10]))  # Read board state as command-line arguments
     else:
-        print("-1 -1")  # Default case if no board state provided
+        print("-1 -1")  # Return no move if no valid board state provided
         sys.exit()
 
     # Identify valid moves
@@ -51,18 +51,23 @@ if __name__ == "__main__":
     best_prediction_score = float('-inf')
 
     for move in valid_moves:
+        # Simulate player move on all valid moves
         temp_board_state = board_state.copy()
-        temp_board_state[move] = 1
+        temp_board_state[move] = 1 
 
+        # Evaluate the moves using the trained model
         prediction_score = model.decision_function([temp_board_state])[0]
 
+        # Update best move and prediction score if a better move is found
         if prediction_score > best_prediction_score:
             best_prediction_score = prediction_score
             best_move = move
 
+    # Return best move as row index and column index
     if best_move is not None:
-        row = (best_move // 3) + 1
-        col = (best_move % 3) + 1
+        row = (best_move // 3) 
+        col = (best_move % 3) 
+        print(f"Predicted best move: Index {best_move} (Row {row}, Column {col})")
         print(f"{row} {col}")  # Output row and column as space-separated values
     else:
         print("-1 -1")  # No valid moves available

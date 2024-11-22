@@ -155,6 +155,50 @@ struct Move get_naive_bayes_move() {
     return best_move;
 }
 
+/* SUPPORT VECTOR MACHINE */
+/* Function to execute SVM_main.py using Popen and retrieve the SVM move */
+struct Move get_SVM_move() {
+    FILE *fp;
+    char path[1035];
+    struct Move best_move = {-1, -1}; // Default to invalid move
+
+    // Base command with the Python interpreter and script path
+    char command[1024] = "C:/Users/siyi8/AppData/Local/Microsoft/WindowsApps/python3.12.exe SVM/SVM_main.py";
+
+    // Append the processed board state to the command
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            int value = (board[i][j] == 'X') ? 1 : (board[i][j] == 'O') ? -1 : 0;
+
+            // Append the value to the command string
+            char cell[4];
+            snprintf(cell, sizeof(cell), " %d", value);
+            strncat(command, cell, sizeof(command) - strlen(command) - 1);
+            
+        }
+    }
+
+    // Open the command for reading
+    fp = popen(command, "r");
+    if (fp == NULL) {
+        fprintf(stderr, "Error: Failed to run command\n");
+        return best_move;
+    }
+
+    // Parse the last line of the output to get the move
+    if (sscanf(path, "%d %d", &best_move.row, &best_move.col) != 2) {
+        fprintf(stderr, "Error: Failed to parse Python output\n");
+        best_move.row = -1;
+        best_move.col = -1;
+    }
+
+    // Close the process
+    if (pclose(fp) != 0) {
+        fprintf(stderr, "Error: Command execution failed\n");
+    }
+
+    return best_move;
+}
 
 
 void on_difficulty_changed(GtkDropDown *dropdown, GParamSpec *pspec, gpointer user_data) {
@@ -225,6 +269,10 @@ void computer_Move() {
         // Use the K-Means algorithm to determine move
         best_move = kmeans_find_best_move(board);
     }
+    else if (strcmp(selected_difficulty, "SVM") == 0) {
+        // Use the Support Vector Machine model to determine the move
+        best_move = get_SVM_move();
+    }    
 
     if (best_move.row != -1 && best_move.col != -1) {  // Check if a valid move was found
         board[best_move.row][best_move.col] = 'O';  // Update the board
@@ -357,7 +405,7 @@ void gameBoard_mode1(GtkWidget *window) {
     gtk_window_set_child(GTK_WINDOW(window), vbox); 
 
      // Difficulty dropdown
-     GtkStringList *string_list = gtk_string_list_new((const char *[]) {"Easy", "Normal", "Hard", "Naive", "Epsilon Greedy", "K-Means", NULL});
+     GtkStringList *string_list = gtk_string_list_new((const char *[]) {"Easy", "Normal", "Hard", "Naive", "Epsilon Greedy", "K-Means", "SVM", NULL});
     GtkWidget *dropdown = gtk_drop_down_new(G_LIST_MODEL(string_list), NULL);
 
     // Set the ID for CSS styling and alignment
