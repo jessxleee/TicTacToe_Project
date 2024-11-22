@@ -142,46 +142,12 @@ void load_css() {
     g_object_unref(provider);  // Free the provider after use
 }
 
-/* NAIVE BAYES */
-/* Function to execute classification.py using Popen and retrieve the Naive Bayes move */
-struct Move get_naive_bayes_move() {
-    FILE *fp;
-    char path[1035];
-    struct Move best_move = {-1, -1}; // Default to invalid move
 
-    // Construct the command with the board state
-    char command[256] = "python naive-bayes/classification.py";
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            char value = (board[i][j] == 'X') ? 'x' : (board[i][j] == 'O') ? 'o' : '0';
-
-            // Append the value to the command string
-            char cell[4];
-            snprintf(cell, sizeof(cell), " %c", value);
-            strncat(command, cell, sizeof(command) - strlen(command) - 1);
-        }
-    }
-
-    // Open the command for reading
-    fp = popen(command, "r");
-    if (fp == NULL) {
-        printf("Failed to run command\n");
-        return best_move;
-    }
-
-    if (fgets(path, sizeof(path), fp) != NULL) {
-        sscanf(path, "%d %d", &best_move.row, &best_move.col);
-    }
-
-    // Close the process
-    pclose(fp);
-
-    return best_move;
-}
 
 
 /* SUPPORT VECTOR MACHINE */
 /* Function to execute SVM_main.py using Popen and retrieve the SVM move */
+/*
 struct Move get_SVM_move() {
     FILE *fp;
     char path[1035];
@@ -210,12 +176,12 @@ struct Move get_SVM_move() {
         return best_move;
     }
 
-    /*// Parse the last line of the output to get the move
+    // Parse the last line of the output to get the move
     if (sscanf(path, "%d %d", &best_move.row, &best_move.col) != 2) {
         fprintf(stderr, "Error: Failed to parse Python output\n");
         best_move.row = -1;
         best_move.col = -1;
-    }*/
+    }
 
     // Read the output a line at a time - output expected as "row col"
     if (fgets(path, sizeof(path), fp) != NULL) {
@@ -228,7 +194,7 @@ struct Move get_SVM_move() {
 
     return best_move;
 }
-
+*/
 
 void on_difficulty_changed(GtkDropDown *dropdown, GParamSpec *pspec, gpointer user_data) {
     click_sounds();
