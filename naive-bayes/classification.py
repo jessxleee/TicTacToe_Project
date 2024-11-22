@@ -14,47 +14,216 @@ def process_data(data):
             raise ValueError("Dataset entries must contain 9 features and 1 label.")
     return processed_data # Return data from dataset
 
-# Train the Naive Bayes model
+def is_winning_move(board, player, move):
+    if board[move] != 0:  # Ignore occupied cells
+        return 0
+    
+    # Simulate move
+    board_copy = board[:]
+    board_copy[move] = player
+
+    # Check rows, columns, and diagonals for a win
+    win_patterns = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],  # Rows
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],  # Columns
+        [0, 4, 8], [2, 4, 6]              # Diagonals
+    ]
+    for pattern in win_patterns:
+        if all(board_copy[cell] == player for cell in pattern):
+            return 1
+    return 0
+
+def is_blocking_move(board, opponent, move):
+    if board[move] != 0:  # Ignore occupied cells
+        return 0
+
+    # Check if placing the opponent's marker results in a winning outcome
+    return is_winning_move(board, opponent, move)
+
+def creates_fork(board, player, move):
+    if board[move] != 0:  # Ignore occupied cells
+        return 0
+    
+    # Simulate move and count the number of potential winning patterns
+    board_copy = board[:]
+    board_copy[move] = player
+
+    win_patterns = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],  # Rows
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],  # Columns
+        [0, 4, 8], [2, 4, 6]              # Diagonals
+    ]
+    winning_patterns = 0
+    for pattern in win_patterns:
+        if sum(board_copy[cell] == player for cell in pattern) == 2 and \
+           sum(board_copy[cell] == 0 for cell in pattern) == 1:
+            winning_patterns += 1
+    return 1 if winning_patterns > 1 else 0
+
+def extend_features(data): 
+    extended_data = []
+    for idx, instance in enumerate(data):
+        try:
+            # Extract board and label
+            board = [1 if cell == 'x' else -1 if cell == 'o' else 0 for cell in instance[:9]]
+            label = instance[9]
+            
+            # Initialize extended features with board state
+            extended_features = board[:]
+            
+            # Count strategic features
+            winning_moves = sum(
+                is_winning_move(board, 1, move)
+                for move in range(9)
+                if board[move] == 0
+            )
+
+            blocking_moves = sum(
+                is_blocking_move(board, -1, move)
+                for move in range(9)
+                if board[move] == 0
+            )
+
+            forks_created = sum(
+                creates_fork(board, 1, move)
+                for move in range(9)
+                if board[move] == 0
+            )
+
+            center_control = 1 if board[4] == 1 else 0
+
+            corner_occupation = sum(
+                1 for move in [0, 2, 6, 8] if board[move] == 1
+            )
+            
+            # Add strategic features to the extended feature set
+            extended_features.extend([
+                winning_moves,        # Total possible winning moves
+                blocking_moves,       # Total possible blocking moves
+                forks_created,        # Total forks created
+                center_control,       # Is center occupied by 'x'
+                corner_occupation     # Number of corners occupied by 'x'
+            ])
+            
+            # Append the label to feature set
+            extended_features.append(label)
+            
+            # Debugging
+            if len(extended_features) != 15:
+                print(f"Issue with instance {idx}: Expected 20 features, got {len(extended_features)}")
+                print(f"Extended features: {extended_features}")
+
+            extended_data.append(extended_features)
+
+        except Exception as e:
+            print(f"Error processing instance {idx}: {e}")
+
+    return extended_data
+
 def train_model(dataset):
-    feature_counts = [{} for _ in range(9)] # Create 9 dictionaries (1 for each feature)
-    label_counts = {} # Store the counts for each label ("positive" and "negative")
+    # Initialize dictionaries for feature counts 
+    feature_counts = [{} for _ in range(14)]  # Expected 9 board + 5 extended features
+    label_counts = {}
 
-    for i in range(len(dataset)): # Iterate over entries in dataset
-        instance = dataset[i]
-        label = instance[-1] # Set label to last item in instance
-        label_counts[label] = label_counts.get(label, 0) + 1 # Count "positive" or "negative" labels in the dataset
-        for i, feature in enumerate(instance[:-1]): # Exclude the last element (label)
-            feature_counts[i].setdefault(feature, {}) # Ensure feature key exists, if not initialize it to 0
-            feature_counts[i][feature].setdefault(label, 0) # Ensure label key exists, if not initialize it to 0
-            feature_counts[i][feature][label] += 1 # Increment the count
+    for instance in dataset:
+        # Extract board and label
+        board = [1 if cell == 'x' else -1 if cell == 'o' else 0 for cell in instance[:9]]
+        label = instance[-1]
 
-    # Apply Laplace smoothing and normalize
-    for i in range(len(feature_counts)): 
-        feature_dict = feature_counts[i] # Feature counts of a single cell
-        for _, label_dict in feature_dict.items():
-            for label in label_counts: # For label="positive" or label="negative"
-                label_count = label_counts[label]
-                label_dict[label] = (label_dict.get(label, 0) + 1) / (label_count + len(feature_dict)) # Remove zero possiblities through Laplace smoothing by adding 1 to each count, follwed by normalisation
+        # Count original features (board state)
+        for i, feature in enumerate(board):
+            if feature not in feature_counts[i]:
+                feature_counts[i][feature] = {'positive': 0, 'negative': 0}  # Separate counts for each label
+            feature_counts[i][feature][label] += 1
 
-    # Normalisation of label counts
-    total_instances = len(dataset) # 958 lines in dataset
-    for label in label_counts: 
-        label_counts[label] /= total_instances # Normalisation of each label
+        # Count extended features
+        for move in range(9):
+            if board[move] == 0:  # Only evaluate unoccupied cells
+                extended_features = [
+                    is_winning_move(board, 1, move),     # Check for winning move
+                    is_blocking_move(board, -1, move),   # Check for blocking move
+                    creates_fork(board, 1, move),        # Check for fork
+                    1 if move == 4 else 0,               # Center control
+                    1 if move in [0, 2, 6, 8] else 0     # Corner control
+                ]
+                for j, feature in enumerate(extended_features, start=9):
+                    if feature not in feature_counts[j]:
+                        feature_counts[j][feature] = {'positive': 0, 'negative': 0}
+                    feature_counts[j][feature][label] += 1
+
+        # Label counts
+        label_counts[label] = label_counts.get(label, 0) + 1
 
     return feature_counts, label_counts
 
 # Predict "positive" or "negative" outcome for a new instance
 def predict_outcome(feature_counts, label_counts, instance):
-    label_probabilities = {}
+    label_probabilities = {}  # Dictionary to store probabilities for each label
+    smoothing_factor = 1
+
     for label in label_counts:
-        probability = label_counts[label] # Initialized to previous base probability
+        probability = label_counts[label]  # Initialize with prior probability of the label
         for i, feature in enumerate(instance):
-            if feature in feature_counts[i] and label in feature_counts[i][feature]: # Ensure feature and current label exist in respective dictionaries
-                probability *= feature_counts[i][feature][label] # Update probability for feature
-            else:
-                probability *= 1 / (label_counts[label] + len(feature_counts[i])) # Prevent zero probability if no recorded probability exists
-        label_probabilities[label] = probability # Store probability in dictionary
-    return max(label_probabilities, key=label_probabilities.get), label_probabilities # Return the label with the highest probability i.e. predicted outcome
+                    if feature in feature_counts[i]:  # Check if the feature exists in feature_counts
+                        # Handle nested dictionary: feature_counts[i][feature] is itself a dictionary
+                        label_counts_for_feature = feature_counts[i][feature]
+                        numerator = label_counts_for_feature.get(label, 0) + smoothing_factor
+                        denominator = sum(label_counts_for_feature.values()) + smoothing_factor * len(label_counts_for_feature)
+                    else:
+                        # Feature not present: Apply smoothing over the entire feature space
+                        numerator = smoothing_factor
+                        denominator = sum(sum(label_counts_for_feature.values()) for label_counts_for_feature in feature_counts[i].values()) + smoothing_factor * len(feature_counts[i])
+
+                    # Update probability for this label
+                    probability *= numerator / denominator
+        
+        label_probabilities[label] = probability  # Store the calculated probability for this label
+    
+    # Return the label with the highest probability and the probabilities for all labels
+    return max(label_probabilities, key=label_probabilities.get), label_probabilities
+
+# Move selection logic
+# Move selection logic
+def predict_move(board, feature_counts, label_counts):
+    # Convert board to numeric representation
+    board = [1 if cell == 'x' else -1 if cell == 'o' else 0 for cell in board]
+
+    # Step 1: Check for a winning move 80% of the time
+    for move in range(9):
+        if board[move] == 0:  # Only evaluate empty cells
+            if is_winning_move(board, 1, move):  # Check if Naive Bayes can win
+                if random.random() < 0.8:  # 80% chance to prioritize winning move
+                    return move // 3, move % 3  # Return index of move (row, col)
+
+    probabilities = []  # List to store probabilities for each move
+
+    for move in range(9):
+        if board[move] == 0:  # Only evaluate empty cells
+            # Calculate higher-order feature values
+            features = [
+                is_winning_move(board, 1, move),
+                is_blocking_move(board, -1, move),
+                creates_fork(board, 1, move),
+                1 if move == 4 else 0,  # Center control
+                1 if move in [0, 2, 6, 8] else 0  # Corner control
+            ]
+
+            # Compute the probability for this move
+            prob = label_counts.get('positive', 1) / sum(label_counts.values())
+            for i, feature in enumerate(features):
+                feature_dict = feature_counts[i].get(feature, {"positive": 0, "negative": 0})
+                total_count = sum(feature_dict.values())  # Sum across all labels
+                prob *= (feature_dict.get('positive', 0) + 1) / (total_count + 2)  # Add smoothing
+
+            probabilities.append((move, prob))
+
+    # Ensure probabilities list is not empty
+    if probabilities:
+        best_move = max(probabilities, key=lambda x: x[1])[0]
+        return best_move // 3, best_move % 3  # Return index of move (row, col)
+
+    # No valid moves left
+    return None
 
 # Function to check for a winning pattern
 def check_winner(board, player):
@@ -73,48 +242,17 @@ def check_winner(board, player):
                 return True  # Return True if a winning position is matched
     return False  # Return False if no winning pattern is matched
 
-# Select best move based on prediction
-def select_best_move(board, prediction):
-    # Check for a winning move for the player
-    def check_winning_move(board, player, index):
-        temp_board = board[:] # Create a copy of board state
-        temp_board[index] = player # Simulate the predicted move
-        return check_winner(temp_board, player) # Check if move would lead to a winning outcome
-
-    # Check for a winning move on the model's turn
-    for i, cell in enumerate(board): 
-        if cell == "b":  # Check for empty cell
-            if check_winning_move(board, "o", i):  # Check if "o" move leads to a winning outcome
-                return i // 3, i % 3  # Return row and column indexes of selected move
-
-    # Check for a blocking move to prevent the "x" player from a winning outcome
-    for i, cell in enumerate(board):
-        if cell == "b":  # Check for empty cell
-            if check_winning_move(board, "x", i):  # Check if "x" move leads to a winning outcome
-                return i // 3, i % 3  # Return row and column indexes of position to block
-
-    # Use Naive Bayes model prediction if no strategic move is immediately identified
-    for i, cell in enumerate(board):
-        if cell == "b":  # Check for empty cell
-            temp_board = board[:] # Create a copy of board state
-            temp_board[i] = prediction # Simulate the predicted move
-            if predict_outcome(feature_probabilities, label_probabilities, temp_board[:-1])[0] == prediction:
-                return i // 3, i % 3  # Return row and column of the selected move
-
-    # Return None if no stragetic move is identified
-    return None
-
-
 # Train model based on processed data from dataset
 with open("naive-bayes/tic-tac-toe.data") as file:
     raw_data = file.readlines() # Read from dataset file
 
 data = process_data(raw_data) # Process data
-random.shuffle(data) # Randomise order of data to prevent bias
+extended_data = extend_features(data)
+random.shuffle(extended_data) # Randomise order of data to prevent bias
 # Split dataset into traning and testing sets in 80:20 ratio
-split_index = int(0.8 * len(data))
-train_data = data[:split_index]
-test_data = data[split_index:]
+split_index = int(0.8 * len(extended_data))
+train_data = extended_data[:split_index]
+test_data = extended_data[split_index:]
 feature_probabilities, label_probabilities = train_model(train_data) # Train model to calculate feature and label probabilities
 
 if __name__ == "__main__": # Only run code if executed directly in file
@@ -163,24 +301,24 @@ if __name__ == "__main__": # Only run code if executed directly in file
 
         # Simulate Tic Tac Toe game
         def simulate_game():
-            board = ["b"] * 9  # Start game with all cells empty
+            board = [0] * 9  # Start game with all cells empty
             model_marker = "o"
             player_marker = "x"
             
             # Randomize who goes first
             current_player = random.choice(["model", "player"])
             
-            while "b" in board:  # Continue game until no empty cells remain
+            while 0 in board:  # Continue game until no empty cells remain
                 if current_player == "model": # Model's turn
                     prediction, _ = predict_outcome(feature_probabilities, label_probabilities, board)
-                    move = select_best_move(board, prediction)
+                    move = predict_move(board, feature_probabilities, label_probabilities)
                     if move:
                         board[move[0] * 3 + move[1]] = model_marker # Convert coordinates of position into index to place model's marker on board
                         if check_winner(board, model_marker): # Check if winning move was made
                             return "model"  # Model wins
                     current_player = "player"  # Swap to player's turn if game continues
                 else: # Simulated player's turn
-                    empty_cells = [i for i, cell in enumerate(board) if cell == "b"] # Create list for all blank cells
+                    empty_cells = [move for move in range(9) if board[move] == 0] # Create list for all blank cells
                     if empty_cells:
                         move = random.choice(empty_cells) # Player's move is randomly chosen from remaining blank cells 
                         board[move] = player_marker # Place player's marker at position
@@ -191,7 +329,7 @@ if __name__ == "__main__": # Only run code if executed directly in file
             return "draw"  # Draw if no winner is identified and all cells are occupied
 
         # Simulate multiple games
-        for _ in range(777): # Angel number
+        for _ in range(1000):
             result = simulate_game()
             if result == "model":
                 model_wins += 1
@@ -215,16 +353,13 @@ if __name__ == "__main__": # Only run code if executed directly in file
         prediction, _ = predict_outcome(feature_probabilities, label_probabilities, board_instance)
         
         # Select the best move for the AI based on the prediction
-        move = select_best_move(board_instance, prediction)
+        move = predict_move(board_instance, feature_probabilities, label_probabilities)
         
         if move:
             print(move[0], move[1])  # Output the row and column of the AI's move
+  # Output the row and column of the AI's move
         else:
             print("-1 -1")  # If no valid move is found, output -1 -1
-
-        # Example usage:
-        # Run your script in the command line with a board state like:
-        # python classification.py x o b b x b o b x
 
     else:
         # Just train the model if no arguments are provided

@@ -8,6 +8,7 @@
 #include <SDL2/SDL_mixer.h>
 #include "header.h"
 
+
 // Game State Variables
 char board[3][3];
 char output[3][3];
@@ -126,14 +127,17 @@ struct Move get_naive_bayes_move() {
     FILE *fp;
     char path[1035];
     struct Move best_move = {-1, -1}; // Default to invalid move
-    
+
     // Construct the command with the board state
-    char command[256] = "python3 naive-bayes/classification.py";
+    char command[256] = "python naive-bayes/classification.py";
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            char cell[3];
-            sprintf(cell, " %c", board[i][j] == '\0' ? 'b' : board[i][j]);
-            strcat(command, cell);
+            char value = (board[i][j] == 'X') ? 'x' : (board[i][j] == 'O') ? 'o' : '0';
+
+            // Append the value to the command string
+            char cell[4];
+            snprintf(cell, sizeof(cell), " %c", value);
+            strncat(command, cell, sizeof(command) - strlen(command) - 1);
         }
     }
 
@@ -144,7 +148,6 @@ struct Move get_naive_bayes_move() {
         return best_move;
     }
 
-    // Read the output a line at a time - output expected as "row col"
     if (fgets(path, sizeof(path), fp) != NULL) {
         sscanf(path, "%d %d", &best_move.row, &best_move.col);
     }
@@ -154,6 +157,7 @@ struct Move get_naive_bayes_move() {
 
     return best_move;
 }
+
 
 /* SUPPORT VECTOR MACHINE */
 /* Function to execute SVM_main.py using Popen and retrieve the SVM move */
