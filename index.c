@@ -233,6 +233,21 @@ void getCurrentBoardState(char output[3][3]) {
     }
 }
 
+
+bool check_winner(char board[3][3]) {
+    int score = eval_board(board);
+    
+    if (score == 10) {
+        return true;
+    } else if (score == -10) {
+        return true;  // Opponent wins
+    } else if (score == 0 && !MovesLeft(board)) {
+        return true;  // It's a draw
+    }
+
+    return false;  // Game is still ongoing
+}
+
 void computer_Move() {
     struct Move best_move;
 
@@ -266,17 +281,17 @@ void computer_Move() {
         // Use the Support Vector Machine model to determine the move
         best_move = get_SVM_move();
     }    
+    if (!check_winner(board)){
+        if (best_move.row != -1 && best_move.col != -1) {  // Check if a valid move was found
+            board[best_move.row][best_move.col] = 'O';  // Update the board
+            gtk_button_set_label(GTK_BUTTON(buttons[best_move.row * 3 + best_move.col]), "O");  // Update the button label
 
-    if (best_move.row != -1 && best_move.col != -1) {  // Check if a valid move was found
-        board[best_move.row][best_move.col] = 'O';  // Update the board
-        gtk_button_set_label(GTK_BUTTON(buttons[best_move.row * 3 + best_move.col]), "O");  // Update the button label
+            player_turn = 1;  // Switch back to player 1
+            gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");  // Update status
 
-        player_turn = 1;  // Switch back to player 1
-        gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");  // Update status
-
-        struct WinnerResult winner = checkWinner();
-        printWinner(winner);
-
+            struct WinnerResult winner = checkWinner();
+            printWinner(winner);
+        }
     }
 }
 
