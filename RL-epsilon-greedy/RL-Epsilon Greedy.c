@@ -14,15 +14,15 @@
 #define LOSS -1                 // Penalty to define losing
 #define DRAW 0                  // Reward to define draw
 
-// Q-Table to store Q-Values for each state-action
+/*Q-Table to store Q-Values for each state-action*/
 double Q[STATE_SPACE][ACTIONS];
-// TicTacToe Board (3x3)
+/*TicTacToe Board (3x3)*/
 char board[SIZE][SIZE];
-// Starting epsilon value (exploration rate)
+/*Starting epsilon value (exploration rate)*/
 float epsilon = 1.0;
 
 
-// Function to intitialise Q-Table
+/*Function to intitialise Q-Table*/
 void initialise_Q_table(){
     for (int i = 0; i < STATE_SPACE; i++){  // i = index for states
         for (int j = 0; j < ACTIONS; j++){  // j = index for actions
@@ -31,7 +31,7 @@ void initialise_Q_table(){
     }
 }
 
-// Function to initialise TicTacToe board
+/*Function to initialise TicTacToe board*/
 void initialise_board(){
     for (int i = 0; i < SIZE; i++){
         for (int j = 0; j < SIZE; j++){
@@ -40,7 +40,7 @@ void initialise_board(){
     }
 }
 
-// Function to print TicTacToe board in terminal for checking
+/*Function to print TicTacToe board in terminal for checking*/
 void print_board(){
     printf("\n");
     for (int i = 0; i < SIZE; i++){
@@ -58,14 +58,14 @@ void print_board(){
     printf("\n");
 }
 
-// Function checks if move is valid (cell must be empty)
+/*Function checks if move is valid (cell must be empty)*/
 int validMove(int action){
     int row = action / SIZE;  // Calculate row index of board
     int col = action % SIZE;  // Calculate column index of board
     return board[row][col] == ' ';  // Checks if cell position is empty, return 1 (True) if valid, return 0 (False) if cells already contains 'X' / 'O'
 }
 
-// Function checks for winning state based on board state
+/*Function checks for winning state based on board state*/
 int check_reward(){
     for (int i = 0; i < SIZE; i++){
         if (board[i][0] != ' ' && board[i][0] == board[i][1] && board[i][1] == board[i][2]){  // Check rows for win
@@ -85,7 +85,7 @@ int check_reward(){
     return 0;
 }
 
-// Function checks for draw
+/*Function checks for draw*/
 int draw(){
     for (int i = 0; i < SIZE; i++){
         for (int j = 0; j < SIZE; j++){
@@ -97,7 +97,7 @@ int draw(){
     return 1;  // If there are no empty cells, it is a draw
 }
 
-// Function to encode each board state to a unique index to identify each board configuration as a distinct combination (Q-Table indexing)
+/*Function to encode each board state to a unique index to identify each board configuration as a distinct combination (Q-Table indexing)*/
 int encodeState(){
     int state = 0;  // There are 3 possible states: 0 = empty, 1 = occupied by 'X', 2 = occupied by 'O'
     int index = 1;
@@ -127,24 +127,24 @@ int encodeState(){
                         state = 7135
 */
 
-// Function for Epsilon-Greedy algorithm  (exploration vs exploitation)
+/*Function for Epsilon-Greedy algorithm  (exploration vs exploitation)*/
 int epsilon_greedy(int state, float epsilon){
     double rand_val = (double)rand() / RAND_MAX;  // Random number generator to generate a number between 0 and 1
     int action;
 
-    // If random value < epsilon value = exploration (random action)
+    /*If random value < epsilon value = exploration (random action)*/
     if (rand_val < epsilon){
         do{
             action = rand() % ACTIONS;
         } while (!validMove(action));  // Check if action is valid, will keep looping as long as action is not valid
         return action;
     } 
-    // Exploit: choosing action with highest Q-value from Q-table
+    /*Exploit: choosing action with highest Q-value from Q-table*/
     else {
         int best_action = -1;  // Initialise to an invalid action state to indicate a valid action has not been selected yet
         double maxQ = -9999;  // Intialise to a very low value to ensure any updated value will be higher than initial "starting" value
 
-        // Interate through all possible actions (0-8)
+        /*Iterate through all possible actions (0-8)*/
         for (int i = 0; i < ACTIONS; i++){
             if (validMove(i) && Q[state][i] > maxQ){  // For each action, check for validity
                 maxQ = Q[state][i];  // If Q-value of current action > current max Q-Value, maxQ variable is updated
@@ -152,7 +152,7 @@ int epsilon_greedy(int state, float epsilon){
             }
         }
 
-        // If no valid best action is found, choose a random valid action (should not happen but this is a failsafe)
+        /*If no valid best action is found, choose a random valid action (should not happen but this is a failsafe)*/
         if (best_action == -1){
             do{
                 best_action = rand() % ACTIONS;   
@@ -162,33 +162,33 @@ int epsilon_greedy(int state, float epsilon){
     }
 }
 
-// Function to update Q-Table using the Q-Learning update rule
+/*Function to update Q-Table using the Q-Learning update rule*/
 void update_Q_Table(int state, int action, int reward, int nextState){
     double nxt_maxQ = -9999;  // Represents best expected future reward (intialise to a very low value to ensure any updated value will be higher than initial "starting" value)
     
-    // Find the max Q-Value for the next state
+    /*Find the max Q-Value for the next state*/
     for (int nextAction = 0; nextAction < ACTIONS; nextAction++){
         if (Q[nextState][nextAction] > nxt_maxQ){ 
             nxt_maxQ = Q[nextState][nextAction];  // Max Q-Value is updated if a higher Q-Value is found
         }
     }
 
-    // Q-Learning Update Rule for current state-action
+    /*Q-Learning Update Rule for current state-action*/
     Q[state][action] += ALPHA * (reward + GAMMA *nxt_maxQ - Q[state][action]);
 }
 
-// Function to save training data (Q-Table)
+/*Function to save training data (Q-Table)*/
 void saveQ_Table(const char *q_table){
     FILE *file_ptr;
     file_ptr = fopen("q_table.txt", "w");  // File pointer to open and update Q-Table.txt (file is created if not found, content in file is overwritten if file already exists)
 
-    // Validation to ensure file can be accessed
+    /*Validation to ensure file can be accessed*/
     if (file_ptr == NULL){ 
         printf("Error saving Q-Table.\n");
         return;
     }
     
-    // Iterate through Q-Table data and save to Q-Table.txt
+    /*Iterate through Q-Table data and save to Q-Table.txt*/
     for (int state = 0; state < STATE_SPACE; state++){
         for (int action = 0; action < ACTIONS; action ++){
             fprintf(file_ptr, "%7.4f\t", Q[state][action]);
@@ -200,7 +200,7 @@ void saveQ_Table(const char *q_table){
     printf("\nQ-Table saved successfully to %s.\n", "q_table.txt");
 }
 
-// Function to load saved Q-Table
+/*Function to load saved Q-Table*/
 void loadQ_Table(const char *q_table){
     FILE *file_ptr; 
     file_ptr = fopen("q_table.txt", "r");  // Access data in Q-Table.txt for reading only (Access trained model data)
@@ -210,7 +210,7 @@ void loadQ_Table(const char *q_table){
         return;
     }
 
-    // Iterate through Q-Table.txt to retrieve Q-Table data
+    /*Iterate through Q-Table.txt to retrieve Q-Table data*/
     for (int state = 0; state < STATE_SPACE; state++){
         for (int action = 0; action < ACTIONS; action ++){
             fscanf(file_ptr, "%lf", &Q[state][action]);
@@ -221,7 +221,7 @@ void loadQ_Table(const char *q_table){
     printf("Q-Table loaded successfully from %s.\n", "q_table.txt");
 }
 
-// Function to save win rate data after each episode for model performance tracking
+/*Function to save win rate data after each episode for model performance tracking*/
 void winData(int episode, int totGames, int wins, int losses, int draws, const char *winData){
     double winRate = (double)wins / NUM_EPS * 100.0;
     double drawRate = (double)draws / NUM_EPS * 100.0;
@@ -240,9 +240,9 @@ void winData(int episode, int totGames, int wins, int losses, int draws, const c
     fclose(win_ptr);
 }
 
-// Function for Reinforcement Learning Training Loop
+/*Function for Reinforcement Learning Training Loop*/
 void train(){
-    // Initialise counter of each game state for statistics tracking
+    /*Initialise counter of each game state for statistics tracking*/
     int totWins = 0;                       
     int wins = 0;                                
     int losses = 0;        
@@ -254,7 +254,7 @@ void train(){
         int player = 1;  // Player 1 starts
         int winner = 0;  // Variable to track winner
 
-        // Creates an infinite loop till game-ending condition
+        /*Creates an infinite loop till game-ending condition*/
         while (1){
             int action = epsilon_greedy(state, epsilon);  // Choose action using Epsilon-greedy
             int row = action / SIZE;  // Calculate row index based on action
@@ -292,7 +292,7 @@ void train(){
             player = -player;  // Switch turn to player 2
         }
 
-        // Epsilon decay: gradually reduce exploration over the episodes
+        /*Epsilon decay: gradually reduce exploration over the episodes*/
         if (epsilon > EPSILON_MIN){
             epsilon *= DECAY;  // Decay epsilon value at end of each episode to explore more intially and gradually shift to exploiting (Learning curve)
             printf("Epsilon after episode %d: %f\n", episode + 1, epsilon);  // Display epsilon value per episode as it decays
@@ -303,12 +303,12 @@ void train(){
         winData(episode + 1, NUM_EPS, wins, losses, draws, "winData.txt");  // Update winData.txt with win statistics
    }
 
-    // Statistics display when training is completed
+    /*Statistics display when training is completed*/
     double winRate = (double)wins / NUM_EPS * 100.0;  // Calculate winrate
     double drawRate = (double)draws / NUM_EPS * 100.0;  // Calculate draw rate
     double lossRate = (double)losses / NUM_EPS * 100.0;  // Calculate loss rate
 
-    // Print statistics
+    /*Print statistics*/
     printf("\n~Training complete!~\nGame Statistics: \n");
     printf("Total episodes: %d\n", NUM_EPS);
     printf("Win Rate: %.2f%%\n", winRate);
@@ -316,7 +316,7 @@ void train(){
     printf("Loss Rate: %.2f%%\n", lossRate);
 }
 
-// Function for user vs AI (using retrieved trained data from Q-Table.txt)
+/*Function for user vs AI (using retrieved trained data from Q-Table.txt)*/
 void play(){
     initialise_board();
     int state = encodeState();
