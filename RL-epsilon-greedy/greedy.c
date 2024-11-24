@@ -3,7 +3,7 @@
 #include <time.h>
 #include "../header.h"
 
-#define EPSILON 0.5
+#define EPSILON 0.1
 
 double q_table[MAX_STATES][NUM_MOVES];  // Actual Q-Table
 int num_states = 0;  // Counter to track number of states in Q-Table
@@ -105,14 +105,15 @@ struct Move get_epsilonGreedy_move(char board[3][3], int player_turn) {
         if (inTable) {
             double rand_val = (double)rand() / RAND_MAX;  // Random number generator between 0 and 1
 
+            /*If Q-Values exist, decide between exploration and exploitation*/
             if (rand_val < EPSILON) {
-                int rand_index = rand() % valid_count;
+                int rand_index = rand() % valid_count;  // Exploration: random valid move
                 best_move = valid_moves[rand_index];
                 printf("Exploration move: [%d][%d]\n", best_move.row, best_move.col);
-            } else {
+            } else {  // Exploitation: based on Q-Table
                 printf("Exploitation move: [%d][%d]\n", best_move.row, best_move.col);
             }
-        } else {
+        } else {  // If no Q-Values exist, default to exploration
             int rand_index = rand() % valid_count;
             best_move = valid_moves[rand_index];
             printf("No Q-Values, exploration move [%d][%d]\n", best_move.row, best_move.col);
