@@ -104,18 +104,19 @@ int minmax(int depth, bool ismax, char board[3][3]) {
 int position_priority(int row, int col) {
     // Center is the highest priority
     if (row == 1 && col == 1) {
-        return 3;  // Highest priority
+        return 1;  // Lowest priority
     }
-
-    // Corners and edges dont matter
-    return 0;  // Lowest priority (corners and edges)
+    if ((row == 0 && col == 0) || (row == 0 && col == 2) || (row == 2 && col == 0) || (row == 2 && col == 2)) {
+        return 3;  // Highest priority (Corners)
+    }
+    return 2;  // Med priority (Edges)
 }
 
 
 /* Check if placing a move in a given spot blocks the 'X' from winning */
 int check_block_move(int row, int col, char board[3][3], char opponent) {
     // Temporarily make the move
-    board[row][col] = 'O';
+    board[row][col] = 'X';
 
     // Check if this move blocks the 'X''s win
     int score = eval_board(board);
@@ -131,31 +132,15 @@ struct Move find_best_move(char board[3][3]) {
     int bestmove_value = -1000;
     struct Move best_move = {-1, -1};  // Default move if no better move is found
 
-
-     // First, try to block the 'X' from winning
-    for (int i = 0; i < 3; i++) { /* Loop rows */
-        for (int j = 0; j < 3; j++) { /* Loop columns */
-            if (board[i][j] == '\0') { /* If cell is empty */
-
-                // Check if placing a move here blocks the 'X''s win
-                if (check_block_move(i, j, board, 'X') == -10) {
-                    best_move.row = i; /* Update best move row */
-                    best_move.col = j; /* Update best move column */
-                    return best_move; /* Return the blocking move immediately */
-                }
-            }
-        }
-    }
-    
-
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             if (board[i][j] == '\0') {
                 board[i][j] = 'O';
                 int move = minmax(0, false, board);
+                printf("[DEBUG] Move value: %d at Row: %d, Col: %d\n", move, i, j);
                 board[i][j] = '\0';
 
-                if (move > bestmove_value || (move == bestmove_value && position_priority(i, j) > position_priority(best_move.row, best_move.col))) {
+                if (move > bestmove_value) {
                     best_move.row = i;
                     best_move.col = j;
                     bestmove_value = move;
@@ -163,5 +148,7 @@ struct Move find_best_move(char board[3][3]) {
             }
         }
     }
+    printf("[DEBUG] Best move chosen at Row: %d, Col: %d with value: %d\n", 
+           best_move.row, best_move.col, bestmove_value);
     return best_move;
 }

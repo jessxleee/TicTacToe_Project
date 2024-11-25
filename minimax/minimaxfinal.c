@@ -10,24 +10,24 @@
 #define OPPONENT 'O'
 #define EMPTY '\0'
 
-int MAX_DEPTH;
+#define MAX_DEPTH 2
 
 int player_win_score, opponent_win_score;
 
 
-
-
 int diffminmax(int depth, bool ismax, char board[3][3], int alpha, int beta) {
     // Evaluate the current board state
-    int score = eval_board(board);
+    if (depth >= MAX_DEPTH){
+       int score = eval_board(board); 
+            // If the game is over, return the score adjusted by depth
+        if (score == 10) {
+            return score - depth; // AI wins
+        }
+        if (score == -10) {
+            return score + depth; // Opponent wins
+        }
+    }
 
-    // If the game is over, return the score adjusted by depth
-    if (score == 10) {
-        return score - depth; // Player wins (good for player, penalize deeper)
-    }
-    if (score == -10) {
-        return score + depth; // Opponent wins (good for opponent, penalize deeper)
-    }
     if (!MovesLeft(board)) {
         return 0; // Draw (no moves left, tie)
     }
@@ -58,7 +58,7 @@ int diffminmax(int depth, bool ismax, char board[3][3], int alpha, int beta) {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (board[i][j] == EMPTY) {
-                    board[i][j] = OPPONENT; // Make the move
+                    board[i][j] = PLAYER; // Make the move
                     int move_value = diffminmax(depth + 1, true, board, alpha, beta); // Recursively evaluate
                     best = (move_value < best) ? move_value : best;
                     beta = (beta < best) ? beta : best;
@@ -84,13 +84,13 @@ struct Move diff_find_best_move(char board[3][3]) {
 
     printf("[DEBUG] Difficulty selected: %c\n", selected_difficulty);
 
-    // First, try to block the opponent from winning (only for Hard difficulty)
-    if (strcmp(selected_difficulty, "Hard") == 0) {
+    // First, try to block the opponent from winning (only for Normal difficulty)
+    if (strcmp(selected_difficulty, "Normal") == 0) {
         for (int i = 0; i < 3; i++) { /* Loop rows */
             for (int j = 0; j < 3; j++) { /* Loop columns */
                 if (board[i][j] == EMPTY) { /* If cell is empty */
                     // Check if placing a move here blocks the opponent's win
-                    if (check_block_move(i, j, board, OPPONENT) == -10) {
+                    if (check_block_move(i, j, board, PLAYER) == -10) {
                         printf("[DEBUG] Blocking move at Row: %d, Col: %d\n", i, j);
                         best_move.row = i;
                         best_move.col = j;
@@ -108,16 +108,15 @@ struct Move diff_find_best_move(char board[3][3]) {
                 printf("[DEBUG] Evaluating move at Row: %d, Col: %d\n", i, j);
 
                 /* Make move */
-                board[i][j] = PLAYER;
+                board[i][j] = OPPONENT;
 
                 /* Evaluate move using Minimax algorithm */
                 int move_value = diffminmax(0, false, board, -10000, 10000);
                 printf("[DEBUG] Move value: %d at Row: %d, Col: %d\n", move_value, i, j);
 
-                if (strcmp(selected_difficulty, "Hard") == 0) {
+                if (strcmp(selected_difficulty, "Normal") == 0) {
                     // Hard difficulty: Use position priority in addition to move value
-                    if (move_value > bestmove_value || 
-                        (move_value == bestmove_value && position_priority(i, j) > position_priority(best_move.row, best_move.col))) {
+                    if (move_value > bestmove_value || position_priority(i, j) > position_priority(best_move.row, best_move.col)) {
                         best_move.row = i;
                         best_move.col = j;
                         bestmove_value = move_value;
