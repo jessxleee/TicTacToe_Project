@@ -60,17 +60,17 @@ gtk4-demo
 ```
 
 7. Install SDL2 and Mixer
-Download SDL2 by picking the .dmg one from the release list:
-https://github.com/libsdl-org/SDL/releases
+   Download SDL2 by picking the .dmg one from the release list:
+   https://github.com/libsdl-org/SDL/releases
 
-Additionally, download the SDL2_image library (also a .dmg from its release list:
-https://github.com/libsdl-org/SDL_image/releases
+   Additionally, download the SDL2_image library (also a .dmg from its release list:
+   https://github.com/libsdl-org/SDL_image/releases
 
-Execute the SDL2 file (will be named something similar to SDL2-2.30.4.dmg) and a window will open with a few files and an SDL2.framework folder.
+   Execute the SDL2 file (will be named something similar to SDL2-2.30.4.dmg) and a window will open with a few files and an SDL2.framework folder.
 
-Open Finder, click Go then Go to folder... and type /Library/Frameworks which will open the contents of that folder. Drag SDL2.framework to /Library/Frameworks and repeat the steps for the SDL2_image file.
+   Open Finder, click Go then Go to folder... and type /Library/Frameworks which will open the contents of that folder. Drag SDL2.framework to /Library/Frameworks and repeat the steps for the SDL2_image file.
 
-There should be two additional folders in /Library/Frameworks, SDL2.framework and SDL2_image.framework.
+   There should be two additional folders in /Library/Frameworks, SDL2.framework and SDL2_image.framework.
 
 8. Install Python (using Homebrew)
 ```bash
