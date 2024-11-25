@@ -126,7 +126,7 @@ def prioritymoves(board_state, valid_moves):
 # Main execution block
 if __name__ == "__main__":
     # Instantiate and train the polynomial SVM model
-    model = OptimizedPolynomialSVMClassifier(degree=3, learning_rate=0.001, no_of_iterations=2000, lambda_parameter=0.01)
+    model = OptimizedPolynomialSVMClassifier(degree=1, learning_rate=0.001, no_of_iterations=2000, lambda_parameter=0.01)
     model.fit(values_train, target_train)
 
     # Read board state from command-line arguments
@@ -150,6 +150,12 @@ if __name__ == "__main__":
             (move, model.decision_function([board_state[:move] + [1] + board_state[move + 1:]])[0])
             for move in valid_moves
         ]
+
+        # Print move scores to stderr
+        print("Move Evaluation Scores:", file=sys.stderr)
+        for move, score in decision_scores:
+            print(f"Move index: {move}, Score: {score}", file=sys.stderr)
+
         best_move = max(decision_scores, key=lambda x: x[1])[0] if decision_scores else None
 
     # Output the best move as row and column to return as move 
@@ -168,7 +174,7 @@ def create_custom_colormap():
     return LinearSegmentedColormap.from_list("CustomColormap", colors, N=256)
 
 
-
+# Generate a simplified confusion matrix with custom colors
 # Generate a simplified confusion matrix with custom colors
 def plot_confusion_matrix(y_true, y_pred):
     cm = confusion_matrix(y_true, y_pred, labels=[1, -1])  # 1: Positive, -1: Negative
@@ -176,7 +182,7 @@ def plot_confusion_matrix(y_true, y_pred):
     # Use the custom colormap
     cmap = create_custom_colormap()
 
-    # Plot the confusion matrix with display labels and style
+    # Plot the confusion matrix
     plt.figure(figsize=(6, 5))
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title("Confusion Matrix", fontsize=14)
@@ -207,43 +213,55 @@ def plot_confusion_matrix(y_true, y_pred):
 
     return TP, TN, FP, FN
 
-# Example usage:
-model = OptimizedPolynomialSVMClassifier(degree=3, learning_rate=0.001, no_of_iterations=2000, lambda_parameter=0.01)
-model.fit(values_train, target_train)
 
-# Predict on the test set
-predictions = model.predict(values_test)
-
-# Plot the confusion matrix
-TP, TN, FP, FN = plot_confusion_matrix(target_test, predictions)
-
-# Display counts
-print(f"True Positive (TP): {TP}")
-print(f"True Negative (TN): {TN}")
-print(f"False Positive (FP): {FP}")
-print(f"False Negative (FN): {FN}")
-
-# Calculate error probability
+# Function to calculate error probability
 def calculate_error_probability(TP, TN, FP, FN):
-    total = TP + TN + FP + FN
-    errors = FP + FN
-    error_probability = errors / total
+
+    total = TP + TN + FP + FN  # Total number of samples
+    errors = FP + FN  # Total incorrect predictions
+    error_probability = errors / total  # Error probability
     return error_probability
 
-# Calculate model accuracy
+# Function to calculate accuracy
 def calculate_accuracy(TP, TN, FP, FN):
-    total = TP + TN + FP + FN
-    correct_predictions = TP + TN
-    accuracy = correct_predictions / total
+
+    total = TP + TN + FP + FN  # Total number of samples
+    correct_predictions = TP + TN  # Total correct predictions
+    accuracy = correct_predictions / total  # Accuracy
     return accuracy
 
-# Example usage with confusion matrix values
-error_probability = calculate_error_probability(TP, TN, FP, FN)
-accuracy = calculate_accuracy(TP, TN, FP, FN)
+# Predict on the test set
+test_predictions = model.predict(values_test)
+TP_test, TN_test, FP_test, FN_test = plot_confusion_matrix(target_test, test_predictions)
 
-# Display results
-print(f"Error Probability: {error_probability:.2f}")
-print(f"Accuracy: {accuracy:.2f}")
+# Predict on the training set
+train_predictions = model.predict(values_train)
+TP_train, TN_train, FP_train, FN_train = plot_confusion_matrix(target_train, train_predictions)
 
+# Display counts for the training set
+print("\nTraining Set Metrics:")
+print(f"True Positive (TP): {TP_train}")
+print(f"True Negative (TN): {TN_train}")
+print(f"False Positive (FP): {FP_train}")
+print(f"False Negative (FN): {FN_train}")
+
+# Calculate and display error probability and accuracy for the training set
+train_error_probability = calculate_error_probability(TP_train, TN_train, FP_train, FN_train)
+train_accuracy = calculate_accuracy(TP_train, TN_train, FP_train, FN_train)
+print(f"Training Set Error Probability: {train_error_probability:.2f}")
+print(f"Training Set Accuracy: {train_accuracy:.2f}")
+
+# Display counts for the test set
+print("\nTest Set Metrics:")
+print(f"True Positive (TP): {TP_test}")
+print(f"True Negative (TN): {TN_test}")
+print(f"False Positive (FP): {FP_test}")
+print(f"False Negative (FN): {FN_test}")
+
+# Calculate and display error probability and accuracy for the test set
+test_error_probability = calculate_error_probability(TP_test, TN_test, FP_test, FN_test)
+test_accuracy = calculate_accuracy(TP_test, TN_test, FP_test, FN_test)
+print(f"Test Set Error Probability: {test_error_probability:.2f}")
+print(f"Test Set Accuracy: {test_accuracy:.2f}")
 
 Not ran during Tic tac Toe game"""
