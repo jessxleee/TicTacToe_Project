@@ -20,10 +20,10 @@ pacman -S --noconfirm mingw-w64-x86_64-SDL2_mixer mingw-w64-x86_64-python mingw-
 
 5. Open up MSYS2 MINGW64 shell (Note: Different from MSYS2 Shell)
 6. Change to your Respository Directory 
-   Example:
-   ```bash
-   cd: Users/user/TicTacToe_Project
-   ```
+Example:
+```bash
+cd: Users/user/TicTacToe_Project
+```
 7. Compile the program.
 ```bash
 make clean
