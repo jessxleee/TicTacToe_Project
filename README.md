@@ -7,7 +7,7 @@ For windows:
 2. Install MSYS2 and open the MSYS2 Shell
 3. Update the package database
 ```bash
-    pacman -Syu
+pacman -Syu
 ```
 4. Install GTK4 with :
 ```bash 
