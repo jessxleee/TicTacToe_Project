@@ -1,5 +1,8 @@
 import numpy as np
 import sys
+#import matplotlib.pyplot as plt
+#from sklearn.metrics import confusion_matrix
+#from matplotlib.colors import LinearSegmentedColormap
 
 # Process data function (replacing sklearn's data validation and preprocessing)
 def process_data(data):
@@ -37,47 +40,57 @@ split_index = int(0.8 * len(data))  # 80% for training, 20% for testing
 values_train, values_test = data[:split_index, :-1], data[split_index:, :-1]
 target_train, target_test = data[:split_index, -1], data[split_index:, -1]
 
-# Define the PolynomialSVMClassifier class
+# Construct the SVM model using matrix operations
 # Equivalent to polynomial kernel classifier
 class OptimizedPolynomialSVMClassifier:
     def __init__(self, degree=2, learning_rate=0.001, no_of_iterations=1000, lambda_parameter=0.01):
-        self.degree = degree
-        self.learning_rate = learning_rate
-        self.no_of_iterations = no_of_iterations
-        self.lambda_parameter = lambda_parameter
+        # Initialize the SVM model with given hyperparameters
+        self.degree = degree                # Degree of the polynomial kernel
+        self.learning_rate = learning_rate  # Learning rate for gradient descent
+        self.no_of_iterations = no_of_iterations  # Number of iterations for training
+        self.lambda_parameter = lambda_parameter  # Regularization parameter to prevent overfitting
 
     def polynomial_kernel(self, X):
+        # Compute the polynomial kernel for the input data
         X = np.array(X, dtype=np.float64)  # Ensure consistent data type
-        return (1 + np.dot(X, X.T)) ** self.degree
+        return (1 + np.dot(X, X.T)) ** self.degree  # Polynomial kernel formula
 
     def fit(self, X, y):
-        X = np.array(X, dtype=np.float64)
-        self.training_data = X
-        self.kernel_matrix = self.polynomial_kernel(X)
+        # Train the SVM model using gradient descent
+        X = np.array(X, dtype=np.float64)  # Ensure consistent input format
+        self.training_data = X             # Store the training data
+        self.kernel_matrix = self.polynomial_kernel(X)  # Compute the kernel matrix
 
-        self.m, self.n = self.kernel_matrix.shape
-        self.w = np.zeros(self.n, dtype=np.float64)
-        self.b = 0
-        self.Y = np.where(y <= 0, -1, 1).astype(np.float64)
+        # Initialize parameters for optimization
+        self.m, self.n = self.kernel_matrix.shape  # Dimensions of the kernel matrix
+        self.w = np.zeros(self.n, dtype=np.float64)  # Initialize weights to zeros
+        self.b = 0                                  # Initialize bias to zero
+        self.Y = np.where(y <= 0, -1, 1).astype(np.float64)  # Convert labels to -1 and 1
 
+        # Perform gradient descent for the specified number of iterations
         for _ in range(self.no_of_iterations):
+            # Calculate margins for each training example
             margins = self.Y * (np.dot(self.kernel_matrix, self.w) - self.b)
-            condition = margins >= 1
+            condition = margins >= 1  # SVM hinge loss condition
             condition = condition.astype(np.float64)
 
+            # Compute gradients for weights and bias
             dw = 2 * self.lambda_parameter * self.w - np.dot(self.kernel_matrix.T, self.Y * (1 - condition))
             db = -np.sum(self.Y * (1 - condition))
 
+            # Update weights and bias using gradient descent
             self.w -= self.learning_rate * dw
             self.b -= self.learning_rate * db
 
     def decision_function(self, X):
-        X = np.array(X, dtype=np.float64)
-        X_poly = (1 + np.dot(X, self.training_data.T)) ** self.degree
-        return np.dot(X_poly, self.w) - self.b
+        # Compute the decision score for input data
+        X = np.array(X, dtype=np.float64)  # Ensure consistent input format
+        X_poly = (1 + np.dot(X, self.training_data.T)) ** self.degree  # Compute polynomial transformation
+        return np.dot(X_poly, self.w) - self.b  # Compute decision scores
 
     def predict(self, X):
-        return np.sign(self.decision_function(X))
+        # Predict class labels for input data based on decision scores
+        return np.sign(self.decision_function(X))  # Return class labels (-1 or 1)
 
 
 # Helper function to check for a winning move
@@ -110,7 +123,6 @@ def prioritymoves(board_state, valid_moves):
             return move, "block"
     return None, None
 
-
 # Main execution block
 if __name__ == "__main__":
     # Instantiate and train the polynomial SVM model
@@ -118,8 +130,8 @@ if __name__ == "__main__":
     model.fit(values_train, target_train)
 
     # Read board state from command-line arguments
-    if len(sys.argv) > 9:
-        board_state = list(map(int, sys.argv[1:10]))
+    if len(sys.argv) > 9: # must read in at least 10 command line arguments for program name and 9 integers
+        board_state = list(map(int, sys.argv[1:10])) # slice extracts 9 arguments after program name, make sure integer type
     else:
         print("-1 -1")  # Invalid board state input
         sys.exit()
@@ -147,3 +159,91 @@ if __name__ == "__main__":
         print(f"{row} {col}")
     else:
         print("-1 -1")
+
+"""Comments for model accuracy tests and confusion matrix
+
+# Generate a custom colormap
+def create_custom_colormap():
+    colors = ["#4059AD", "#6B9AC4", "#97D8C4", "#EFF2F1"]  # Sapphire, Blue Gray, Tiffany Blue, Anti-flash white
+    return LinearSegmentedColormap.from_list("CustomColormap", colors, N=256)
+
+
+
+# Generate a simplified confusion matrix with custom colors
+def plot_confusion_matrix(y_true, y_pred):
+    cm = confusion_matrix(y_true, y_pred, labels=[1, -1])  # 1: Positive, -1: Negative
+
+    # Use the custom colormap
+    cmap = create_custom_colormap()
+
+    # Plot the confusion matrix with display labels and style
+    plt.figure(figsize=(6, 5))
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title("Confusion Matrix", fontsize=14)
+    plt.colorbar()
+
+    tick_marks = [0, 1]
+    plt.xticks(tick_marks, ["Positive", "Negative"], fontsize=10)
+    plt.yticks(tick_marks, ["Positive", "Negative"], fontsize=10)
+
+    # Annotate matrix with counts
+    for i in range(2):
+        for j in range(2):
+            plt.text(j, i, f"{cm[i, j]}",
+                     horizontalalignment="center",
+                     color="black",
+                     fontsize=12)
+
+    plt.ylabel("Actual Label", fontsize=12)
+    plt.xlabel("Predicted Label", fontsize=12)
+    plt.tight_layout()
+    plt.show()
+
+    # Return TP, TN, FP, FN values
+    TP = cm[0, 0]  # True Positive
+    FP = cm[1, 0]  # False Positive
+    FN = cm[0, 1]  # False Negative
+    TN = cm[1, 1]  # True Negative
+
+    return TP, TN, FP, FN
+
+# Example usage:
+model = OptimizedPolynomialSVMClassifier(degree=3, learning_rate=0.001, no_of_iterations=2000, lambda_parameter=0.01)
+model.fit(values_train, target_train)
+
+# Predict on the test set
+predictions = model.predict(values_test)
+
+# Plot the confusion matrix
+TP, TN, FP, FN = plot_confusion_matrix(target_test, predictions)
+
+# Display counts
+print(f"True Positive (TP): {TP}")
+print(f"True Negative (TN): {TN}")
+print(f"False Positive (FP): {FP}")
+print(f"False Negative (FN): {FN}")
+
+# Calculate error probability
+def calculate_error_probability(TP, TN, FP, FN):
+    total = TP + TN + FP + FN
+    errors = FP + FN
+    error_probability = errors / total
+    return error_probability
+
+# Calculate model accuracy
+def calculate_accuracy(TP, TN, FP, FN):
+    total = TP + TN + FP + FN
+    correct_predictions = TP + TN
+    accuracy = correct_predictions / total
+    return accuracy
+
+# Example usage with confusion matrix values
+error_probability = calculate_error_probability(TP, TN, FP, FN)
+accuracy = calculate_accuracy(TP, TN, FP, FN)
+
+# Display results
+print(f"Error Probability: {error_probability:.2f}")
+print(f"Accuracy: {accuracy:.2f}")
+
+
+Not ran during Tic tac Toe game"""
