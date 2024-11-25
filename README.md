@@ -1,6 +1,6 @@
 # TicTacToe_Project
 
-**Installing GTK 4.0**
+**Installing GTK 4.0 and other dependencies**
 For windows:
 1. Download MSYS2 Installer from https://www.msys2.org/
 2. Install MSYS2 and open the MSYS2 Shell
@@ -14,7 +14,7 @@ pacman -S mingw-w64-x86_64-gtk4
 ```
 Install other dependencies used in the project:
 ```bash 
-pacman -S mingw-w64-x86_64-SDL2_mixer
+pacman -S --noconfirm mingw-w64-x86_64-SDL2_mixer mingw-w64-x86_64-python mingw-w64-x86_64-python-scikit-learn mingw-w64-x86_64-python-matplotlib
 ```
 
 5. Open up MSYS2 MINGW64 shell (Note: Different from MSYS2 Shell)
@@ -57,5 +57,3 @@ For MacOS:
 ```bash
     gtk4-demo
 ```
-
-
