@@ -1,7 +1,5 @@
 import random
 import sys
-# from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-# import matplotlib.pyplot as plt
 
 # Process the dataset for use by the model
 def process_data(data):
@@ -257,6 +255,9 @@ feature_probabilities, label_probabilities = train_model(train_data) # Train mod
 
 if __name__ == "__main__": # Only run code if executed directly in file
     if len(sys.argv) > 1 and sys.argv[1] == "--plot": # Check for 'plot' flag
+        from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+        import matplotlib.pyplot as plt
+
         # Calculate accuracy of model's predictions
         def calculate_accuracy(data, feature_probabilities, label_probabilities):
             correct_predictions = 0
