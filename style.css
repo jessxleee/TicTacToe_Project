@@ -23,6 +23,10 @@
         font-weight: bold;
     }
 
+    #main-vbox{
+        margin-top: 50px;
+    }
+
     #players-button {
         font-size: 24px;
         background-color: #f0f0f0;
@@ -75,16 +79,76 @@
 
     }
 
+    #player-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        gap: 20px; /* Adds spacing between elements */
+    }
+    
+
+    #player-box {
+        text-align: center;
+        font-size: 30px;
+        font-weight: normal;
+        color: black;
+        margin: 30px;
+        border: none;
+        box-shadow: none;
+    }
+    
+    /* Active player button */
+    #player-box.active-player {
+        font-weight: bold; /* Bold text */
+        border-bottom: 3px solid #40E0D0; /* Green underline */
+        border-radius: 0px; /* No rounded corners for underline */
+        padding-bottom: 7px; /* Adjust for visual alignment */
+    }
+
+    #player-box:hover{
+        color: #40E0D0;
+    }
+
+    #switch-button{
+        font-size: 28px;
+        font-weight: bold;
+        color: black;
+        text-align: center;
+        cursor: pointer;
+        border: none;
+        box-shadow: none;
+        transition: background-color 0.3s, box-shadow 0.3s;
+    }
+
+    #switch-button:hover {
+        color: #40E0D0;
+        transform: scale(1.05);
+    }
+
     #result-label{
         font-size: 36px;
         font-weight: bold;
         color: black;
+        padding: 20px;
     }
 
     .winning-cells {
         background:#a4f0e8;
         color: black ;  
-        border-color: black;                
+        border-color: black;
+        animation: pulse 1s infinite;                
+    }
+
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 5px #40E0D0;
+        }
+        50% {
+            box-shadow: 0 0 20px #40E0D0;
+        }
+        100% {
+            box-shadow: 0 0 5px #40E0D0;
+        }
     }
 
     #dropdown * {
@@ -114,3 +178,14 @@
         color: black;
         text-decoration: underline;
     }
+
+    #pregame-menu {
+        padding: 20px;
+    }
+    
+    #selection-button {
+        margin: 10px;
+        border-radius: 8px;
+        font-size: 16px;
+    }
+

@@ -1,21 +1,26 @@
 #define SDL_MAIN_HANDLED
 #include <gtk/gtk.h>
+#include <gtk/gtkmain.h>
 #include <stdbool.h>
 #include <cairo.h>
 #include <limits.h>
 #include <stdio.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
+#include <time.h>
+#include <unistd.h>
 #include "header.h"
 
 
 // Game State Variables
 char board[3][3];
 char output[3][3];
+GtkWidget *players[2]; // 0
 GtkWidget *buttons[9];
 int game_mode = 0;
 int player_turn = 1; // 1 for X, 2 for O
 char player = 'X', opponent ='O'; //Identify player and opponent
+GtkWidget *switch_button;
 GtkWidget *status_label;
 GtkWidget *result_label;
 const char *selected_difficulty = "Easy"; 
@@ -142,59 +147,10 @@ void load_css() {
     g_object_unref(provider);  // Free the provider after use
 }
 
-
-
-
-/* SUPPORT VECTOR MACHINE */
-/* Function to execute SVM_main.py using Popen and retrieve the SVM move */
-/*
-struct Move get_SVM_move() {
-    FILE *fp;
-    char path[1035];
-    struct Move best_move = {-1, -1}; // Default to invalid move
-
-    // Base command with the Python interpreter and script path
-    char command[1024] = "python3 SVM/SVM_main.py";
-
-    // Append the processed board state to the command
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            int value = (board[i][j] == 'X') ? 1 : (board[i][j] == 'O') ? -1 : 0;
-
-            // Append the value to the command string
-            char cell[4];
-            snprintf(cell, sizeof(cell), " %d", value);
-            strncat(command, cell, sizeof(command) - strlen(command) - 1);
-            
-        }
-    }
-
-    // Open the command for reading
-    fp = popen(command, "r");
-    if (fp == NULL) {
-        fprintf(stderr, "Error: Failed to run command\n");
-        return best_move;
-    }
-
-    // Parse the last line of the output to get the move
-    if (sscanf(path, "%d %d", &best_move.row, &best_move.col) != 2) {
-        fprintf(stderr, "Error: Failed to parse Python output\n");
-        best_move.row = -1;
-        best_move.col = -1;
-    }
-
-    // Read the output a line at a time - output expected as "row col"
-    if (fgets(path, sizeof(path), fp) != NULL) {
-        sscanf(path, "%d %d", &best_move.row, &best_move.col);
-    }
-    // Close the process
-    if (pclose(fp) != 0) {
-        fprintf(stderr, "Error: Command execution failed\n");
-    }
-
-    return best_move;
+gboolean force_style_update(gpointer data) {
+    // No operation, just ensure the main loop processes pending events
+    return FALSE; // Return FALSE to remove the idle callback after execution
 }
-*/
 
 void on_difficulty_changed(GtkDropDown *dropdown, GParamSpec *pspec, gpointer user_data) {
     click_sounds();
@@ -234,7 +190,7 @@ void getCurrentBoardState(char output[3][3]) {
 }
 
 
-bool check_winner(char board[3][3]) {
+bool win_found(char board[3][3]) {
     int score = eval_board(board);
     
     if (score == 10) {
@@ -248,17 +204,35 @@ bool check_winner(char board[3][3]) {
     return false;  // Game is still ongoing
 }
 
+void active_player(GtkWidget *playerX, GtkWidget *playerO){
+    g_print("Switching active player. Current player_turn: %d\n", player_turn);
+    if (player_turn == 1){
+        // Highlight Player X
+        gtk_widget_remove_css_class(playerO, "active-player");
+        gtk_widget_add_css_class(playerX, "active-player");
+    }
+    else if (player_turn == 2) {
+        // Highlight Player O
+        gtk_widget_remove_css_class(playerX, "active-player");
+        gtk_widget_add_css_class(playerO, "active-player");
+
+    }
+    else{}
+
+    g_idle_add(force_style_update, NULL);
+}
 void computer_Move() {
     struct Move best_move;
-
-        // Check the selected difficulty and use the appropriate method
+   // Check the selected difficulty and use the appropriate method
     if (strcmp(selected_difficulty, "Naive") == 0) {
         // Use the Naive Bayes model to determine the move
         best_move = get_naive_bayes_move();
+
     } else if (strcmp(selected_difficulty, "Epsilon Greedy") == 0) {
         //Use reinforcement learning with Epsilon Greedy model to determine move
         loadQ_Table("RL-epsilon-greedy/q_table_100k.txt");
         best_move = get_epsilonGreedy_move(board, player_turn);
+
     }else if (strcmp(selected_difficulty, "Hard") == 0){
         // Use the Minimax algorithm for other difficulty levels
         best_move = find_best_move(board);
@@ -281,19 +255,35 @@ void computer_Move() {
         // Use the Support Vector Machine model to determine the move
         best_move = get_SVM_move();
     }    
-    if (!check_winner(board)){
-        if (best_move.row != -1 && best_move.col != -1) {  // Check if a valid move was found
-            board[best_move.row][best_move.col] = 'O';  // Update the board
-            gtk_button_set_label(GTK_BUTTON(buttons[best_move.row * 3 + best_move.col]), "O");  // Update the button label
 
-            player_turn = 1;  // Switch back to player 1
-            gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");  // Update status
+     if (!win_found(board)) {
+        if (best_move.row != -1 && best_move.col != -1) {
+            // double time_taken = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.0;
+            // printf("Time taken by AI to make move: %f seconds\n", time_taken);
+            
+            // srand(time(NULL));
+            // int delay_seconds = (rand() % 3) + 1;
+            // printf("Delaying for %d seconds to simulate thinking\n", delay_seconds);
+            // sleep(delay_seconds);
 
+            board[best_move.row][best_move.col] = opponent;  // Bot's symbol
+            gtk_button_set_label(GTK_BUTTON(buttons[best_move.row * 3 + best_move.col]), 
+                                 (opponent == 'X') ? "X" : "O");
+
+            // Check for a winner after the bot's move
             struct WinnerResult winner = checkWinner();
             printWinner(winner);
+
+            // Switch back to the player's turn
+            player_turn = (opponent == 'X') ? 2 : 1;
+
+            // Update the active player visually
+            active_player(players[0], players[1]);
         }
     }
 }
+
+
 
 void gameMenu(GtkWidget *window){
     GtkWidget *box;
@@ -336,6 +326,23 @@ void clear_window(GtkWidget *window) {
     }
 }
 
+void set_player_turn(GtkWidget *widget, gpointer data) {
+    player_turn = GPOINTER_TO_INT(data); // Set the starting player: 1 for X, 2 for O
+
+    // Disable Player X and Player O buttons
+    gtk_widget_set_sensitive(players[0], FALSE);
+    gtk_widget_set_sensitive(players[1], FALSE);
+
+    // Highlight the active player
+    active_player(players[0], players[1]);
+
+    if (player_turn == 2) {
+        computer_Move(); // If the bot is O, make the first move
+    }
+}
+
+
+
 void main_page(GtkWidget *widget, gpointer data) {
     click_sounds();
     GtkWidget *window = GTK_WIDGET(gtk_widget_get_root(widget));  
@@ -356,38 +363,55 @@ void main_page(GtkWidget *widget, gpointer data) {
     }
     gtk_widget_set_visible(window, TRUE);
 }
-   
+
 void inputHandler(GtkWidget *widget, gpointer data) {
     int row = GPOINTER_TO_INT(data) / 3;
     int col = GPOINTER_TO_INT(data) % 3;
 
-    if (board[row][col] == '\0') {  // If cell is empty
-        if (player_turn == 1) {
-            gtk_button_set_label(GTK_BUTTON(widget), "X");
-            board[row][col] = 'X';
-            buttonClicks_sounds();
-            player_turn = 2;
-            gtk_label_set_text(GTK_LABEL(status_label), "Player 2's Turn");
+    if (board[row][col] == '\0') {  // If the cell is empty
+        char player_symbol = (player_turn == 1) ? 'X' : 'O';
+        gtk_button_set_label(GTK_BUTTON(widget), (player_turn == 1) ? "X" : "O");
+        board[row][col] = player_symbol;
+        buttonClicks_sounds();
 
-        } else {
-            gtk_button_set_label(GTK_BUTTON(widget), "O");
-            board[row][col] = 'O';
-            buttonClicks_sounds();
-            player_turn = 1;
-            gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");
-        }
-        
-        char currentBoard[3][3];
-        getGtkBoardState(currentBoard);
+        // Switch turn
+        player_turn = (player_turn == 1) ? 2 : 1;
 
+        // Update the active player visually
+        active_player(players[0], players[1]);
+
+        // Check for a winner
         struct WinnerResult winner = checkWinner();
         printWinner(winner);
 
+        // Trigger bot move if in single-player mode
         if (game_mode == 1 && player_turn == 2) {
             computer_Move();
         }
     }
 }
+
+
+void on_switch_clicked(GtkWidget *button, gpointer data) {
+    g_print("Switching player turn.\n");
+
+    // Toggle the current player's turn
+    player_turn = (player_turn == 1) ? 2 : 1;
+
+    // Reset the board while keeping the current player_turn
+    resetBoard(NULL, NULL);
+
+    // Update active player indicator
+    GtkWidget **boxes = (GtkWidget **)data;
+    active_player(boxes[0], boxes[1]);
+
+    // If it's the bot's turn, let the bot make the move
+    if (game_mode == 1 && player_turn == 2) {
+        g_print("Bot makes the first move as Player O.\n");
+        computer_Move();
+    }
+}
+
 
 void gameBoard_mode1(GtkWidget *window) {
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
@@ -408,16 +432,33 @@ void gameBoard_mode1(GtkWidget *window) {
     // Add dropdown to the vbox
     gtk_box_append(GTK_BOX(vbox), dropdown);
 
-    // Scoreboard label
-    status_label = gtk_label_new("Player 1's Turn");
-    gtk_widget_set_name(status_label, "label");
-    gtk_widget_set_halign(status_label, GTK_ALIGN_CENTER);
-    gtk_box_append(GTK_BOX(vbox), status_label);
+     GtkWidget *status_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL,20);
+    gtk_widget_set_halign(status_hbox, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(vbox), status_hbox);
+    gtk_widget_set_name(status_hbox, "player-section");
 
-   result_label = gtk_label_new("");  // Empty label initially
-    gtk_widget_set_name(result_label, "result-label");
-    gtk_box_append(GTK_BOX(vbox), result_label);
+  // Player X section
+    GtkWidget *playerX_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5); // Vertical box for "Player" and "X"
+    GtkWidget *playerX = gtk_button_new_with_label("Player\n    X");
+    gtk_widget_set_name(playerX, "player-box");
+    gtk_box_append(GTK_BOX(playerX_box), playerX);
+    gtk_box_append(GTK_BOX(status_hbox), playerX_box);
+    g_signal_connect(playerX, "clicked", G_CALLBACK(set_player_turn), GINT_TO_POINTER(1)); // Set X as the starting player
 
+    // Player O section
+    GtkWidget *playerO_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5); // Vertical box for "Player" and "O"
+    GtkWidget *playerO = gtk_button_new_with_label("Player\n    O");
+    gtk_widget_set_name(playerO, "player-box");
+    gtk_box_append(GTK_BOX(playerO_box), playerO);
+    gtk_box_append(GTK_BOX(status_hbox), playerO_box);
+    g_signal_connect(playerO, "clicked", G_CALLBACK(set_player_turn), GINT_TO_POINTER(2)); // Set O as the starting player
+
+
+     // Store Player Widgets for Active Highlighting
+    players[0] = playerX; // Player X
+    players[1] = playerO; // Player O
+    active_player(playerX, playerO);
+ 
     GtkWidget *grid = gtk_grid_new();
     gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
     gtk_widget_set_valign(grid, GTK_ALIGN_CENTER);
@@ -430,6 +471,10 @@ void gameBoard_mode1(GtkWidget *window) {
         gtk_widget_set_size_request(buttons[i], 200, 200);
         gtk_grid_attach(GTK_GRID(grid), buttons[i], i % 3, i / 3, 1, 1);  // Add to grid
     }
+
+    result_label = gtk_label_new("");  // Empty label initially
+    gtk_widget_set_name(result_label, "result-label");
+    gtk_box_append(GTK_BOX(vbox), result_label);
 
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
      gtk_widget_set_halign(hbox, GTK_ALIGN_CENTER);
@@ -449,15 +494,45 @@ void gameBoard_mode1(GtkWidget *window) {
 void gameBoard_mode2(GtkWidget *window) {
     // Scoreboard label
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_name(vbox, "main-vbox");
     gtk_window_set_child(GTK_WINDOW(window), vbox);  
-    status_label = gtk_label_new("Player 1's Turn");
-    gtk_widget_set_name(status_label, "label");
-    gtk_widget_set_halign(status_label, GTK_ALIGN_CENTER);
-    gtk_box_append(GTK_BOX(vbox), status_label);
 
-    result_label = gtk_label_new("");  // Empty label initially
-    gtk_widget_set_name(result_label, "result-label");
-    gtk_box_append(GTK_BOX(vbox), result_label);
+    GtkWidget *status_hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL,20);
+    gtk_widget_set_halign(status_hbox, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(vbox), status_hbox);
+    gtk_widget_set_name(status_hbox, "player-section");
+
+    GtkWidget *playerX = gtk_box_new(GTK_ORIENTATION_VERTICAL,5);
+    GtkWidget *x_label = gtk_label_new("Player");
+    GtkWidget *x_sublabel = gtk_label_new("X");
+    gtk_box_append(GTK_BOX(playerX), x_label);
+    gtk_box_append(GTK_BOX(playerX), x_sublabel);
+    gtk_widget_set_name(playerX, "player-box");
+    gtk_box_append(GTK_BOX(status_hbox), playerX);
+
+    GtkWidget *switch_button = gtk_button_new_with_label("↔"); 
+    gtk_widget_set_name(switch_button, "switch-button");
+     gtk_widget_set_size_request(switch_button, 30, 20);
+     gtk_box_append(GTK_BOX(status_hbox), switch_button);
+
+    GtkWidget *playerO = gtk_box_new(GTK_ORIENTATION_VERTICAL,5);
+    GtkWidget *o_label = gtk_label_new("Player");
+    GtkWidget *o_sublabel = gtk_label_new("O");
+    gtk_box_append(GTK_BOX(playerO), o_label);
+    gtk_box_append(GTK_BOX(playerO), o_sublabel);
+    gtk_widget_set_name(playerO, "player-box");
+    gtk_box_append(GTK_BOX(status_hbox), playerO);
+
+    // Dynamically allocate memory for player_boxes
+    GtkWidget **player = g_malloc(2 * sizeof(GtkWidget *));
+    players[0] = playerX;
+    players[1] = playerO;
+
+    // Connect the button signal with the dynamically allocated player_boxes
+    g_signal_connect(switch_button, "clicked", G_CALLBACK(on_switch_clicked), players);
+
+    // Initialize active player
+    active_player(playerX, playerO); 
 
     GtkWidget *grid = gtk_grid_new();
     gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
@@ -471,6 +546,10 @@ void gameBoard_mode2(GtkWidget *window) {
         gtk_widget_set_size_request(buttons[i], 200, 200);
         gtk_grid_attach(GTK_GRID(grid), buttons[i], i % 3, i / 3, 1, 1);  // Add to grid
     }
+
+    result_label = gtk_label_new("");  // Empty label initially
+    gtk_widget_set_name(result_label, "result-label");
+    gtk_box_append(GTK_BOX(vbox), result_label);
 
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
     gtk_widget_set_halign(hbox, GTK_ALIGN_CENTER);
@@ -560,8 +639,8 @@ void printWinner(struct WinnerResult result){
         gamedraw_sounds();
     }   
     else if (result.winner == 'X' || result.winner == 'O') {
-        g_print("\nPlayer %c Wins!\n", (result.winner == 'X') ? '1' : '2');
-        gtk_label_set_text(GTK_LABEL(result_label), (result.winner == 'X') ? "Player 1 Wins!" : "Player 2 Wins!");
+        g_print("\nPlayer %c Wins!\n", (result.winner == 'X') ? 'X' : 'O');
+        gtk_label_set_text(GTK_LABEL(result_label), (result.winner == 'X') ? "Player X Wins!" : "Player O Wins!");
         highlight_winning_cells(result.winning_cells[0], result.winning_cells[1], result.winning_cells[2]); 
         endGame();
         gamewin_sounds();
@@ -573,10 +652,15 @@ void endGame(){
     for(int i = 0; i < 9; i++){
         gtk_widget_set_sensitive(buttons[i], FALSE); //disable all buttons 
     }
+
+    if (GTK_IS_WIDGET(switch_button)) {
+        gtk_widget_set_sensitive(switch_button, FALSE); // Disable the switch button
+    }
 }
 
 void resetBoard(GtkWidget *widget, gpointer window) {
     click_sounds();
+
     // Clear the game board array
     for (int row = 0; row < 3; row++) {
         for (int col = 0; col < 3; col++) {
@@ -584,26 +668,27 @@ void resetBoard(GtkWidget *widget, gpointer window) {
         }
     }
 
-    // Reset button labels, CSS classes, and enable buttons
+    // Reset button labels and enable all buttons
     for (int i = 0; i < 9; i++) {
         gtk_button_set_label(GTK_BUTTON(buttons[i]), "");  // Clear button text
-        gtk_widget_remove_css_class(buttons[i], "winning-cells");   // Remove "winning-cells" class
-        gtk_widget_set_sensitive(buttons[i], TRUE);  // Enable all buttons
+        gtk_widget_remove_css_class(buttons[i], "winning-cells");
+        gtk_widget_set_sensitive(buttons[i], TRUE);
     }
 
-    // Reset the winning cells in the global `result` struct
-    result.winner = '\0';  // Clear the winner character
+    // Enable Player X and Player O buttons
+    gtk_widget_set_sensitive(players[0], TRUE);
+    gtk_widget_set_sensitive(players[1], TRUE);
+
+
+    result.winner = '\0';
     for (int i = 0; i < 3; i++) {
-        result.winning_cells[i] = -1;  // Set to -1 to indicate no winning cells
+        result.winning_cells[i] = -1;
     }
-    load_css();
 
-    // Reset other game state variables
-    player_turn = 1;
-    gtk_label_set_text(GTK_LABEL(status_label), "Player 1's Turn");  // Reset status label
-    gtk_label_set_text(GTK_LABEL(result_label), "");  // Clear the result label
-    g_print("\nGame has been reset.\n");
+    gtk_label_set_text(GTK_LABEL(result_label), "");
 }
+
+
 
 void exitGame(GtkWidget *widget, gpointer window) {
     resetBoard(widget,window);
@@ -657,12 +742,12 @@ GtkWidget* headerbar(GtkWidget *window) {
     return header_bar;
 }
 
-static void activate(GtkApplication *app, gpointer user_data) {
+void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *window;
 
     // Create a new window associated with the application
     window = gtk_application_window_new(app);
-    gtk_window_set_default_size(GTK_WINDOW(window), 800, 900);
+    gtk_window_set_default_size(GTK_WINDOW(window), 900, 1000);
 
     GtkWidget *header_bar = headerbar(window);
     gtk_window_set_titlebar(GTK_WINDOW(window), header_bar);
@@ -693,9 +778,11 @@ int main(int argc, char *argv[]) {
     // Clean up the application object
     g_object_unref(app);
     cleanup_sounds();
+    g_free(players);
 
     return status;
 }
+
 
 
 
