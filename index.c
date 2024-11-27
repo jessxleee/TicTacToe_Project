@@ -204,8 +204,13 @@ bool win_found(char board[3][3]) {
     return false;  // Game is still ongoing
 }
 
+void force_ui_updates() {
+   while (g_main_context_iteration(NULL, FALSE)) {
+        // Process pending GTK events
+    }
+}
+
 void active_player(GtkWidget *playerX, GtkWidget *playerO){
-    g_print("Switching active player. Current player_turn: %d\n", player_turn);
     if (player_turn == 1){
         // Highlight Player X
         gtk_widget_remove_css_class(playerO, "active-player");
@@ -219,7 +224,7 @@ void active_player(GtkWidget *playerX, GtkWidget *playerO){
     }
     else{}
 
-    g_idle_add(force_style_update, NULL);
+    force_ui_updates();  // Ensure styles are applied immediately
 }
 void computer_Move() {
     struct Move best_move;
@@ -296,6 +301,11 @@ void computer_Move() {
             active_player(players[0], players[1]);
         }
     }
+}
+
+gboolean delayed_computer_move(gpointer data) {
+    computer_Move();  // Perform the bot's move
+    return G_SOURCE_REMOVE;  // Ensure the timeout runs only once
 }
 
 
@@ -402,7 +412,7 @@ void inputHandler(GtkWidget *widget, gpointer data) {
 
         // Trigger bot move if in player mode = 1
         if (game_mode == 1 && player_turn == 2) {
-            computer_Move();
+             g_timeout_add(500, delayed_computer_move, NULL);
         }
     }
 }
