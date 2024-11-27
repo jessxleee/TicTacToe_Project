@@ -24,10 +24,10 @@
     }
 
     #main-vbox{
-        margin-top: 50px;
+        margin-top: 15px;
     }
 
-    #players-button {
+    #player-mode {
         font-size: 24px;
         background-color: #f0f0f0;
         width: 100px;
@@ -37,16 +37,16 @@
         border: 2px solid black ;
     }
 
-    #players-button:hover {
+    #player-mode:hover {
         background-color: #6C9BCF;
     }
 
     button {
         background-color: #f0f0f0;
-        font-size: 48px;          
+        font-size: 44px;          
         font-weight: bold;         
         color: #2c3e50;            
-        padding: 20px;            
+        padding: 10px;            
         border: 3px solid #bdc3c7; 
         border-radius: 10px;       
         width: 100px;              
@@ -92,7 +92,7 @@
         font-size: 30px;
         font-weight: normal;
         color: black;
-        margin: 30px;
+        margin: 20px;
         border: none;
         box-shadow: none;
     }
@@ -107,6 +107,7 @@
 
     #player-box:hover{
         color: #40E0D0;
+        transform: scale(1.05);
     }
 
     #switch-button{
@@ -167,7 +168,7 @@
         color: #40E0D0; 
         font-size: 18px;
         font-weight: bold;
-        padding: 10px;
+        padding:5px;
         margin: 0 10px;
         text-align: center; 
         cursor: pointer;  
@@ -179,13 +180,39 @@
         text-decoration: underline;
     }
 
-    #pregame-menu {
-        padding: 20px;
+    @media (max-width: 600px) {
+        #player-box {
+            font-size: 20px;
+        }
+    
+        button {
+            font-size: 24px;
+            padding: 10px;
+        }
     }
     
-    #selection-button {
-        margin: 10px;
-        border-radius: 8px;
-        font-size: 16px;
+    @media (min-width: 601px) and (max-width: 900px) {
+        #player-box {
+            font-size: 25px;
+        }
+    
+        button {
+            font-size: 36px;
+            padding: 15px;
+        }
+        #hbox-button{
+            padding: 5px;
+        }
     }
-
+    
+    @media (min-width: 901px) {
+        #player-box {
+            font-size: 30px;
+        }
+    
+        button {
+            font-size: 48px;
+            padding: 20px;
+        }
+    }
+    

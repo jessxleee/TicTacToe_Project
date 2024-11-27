@@ -309,13 +309,13 @@ void gameMenu(GtkWidget *window){
     button_1p = gtk_button_new_with_label("1 Player");
     g_signal_connect(button_1p, "clicked", G_CALLBACK(main_page), GINT_TO_POINTER(1));
     gtk_box_append(GTK_BOX(box), button_1p);
-    gtk_widget_set_name(button_1p, "players-button");
+    gtk_widget_set_name(button_1p, "player-mode");
 
     //"2 Players" button
     button_2p = gtk_button_new_with_label("2 Player");
     g_signal_connect(button_2p, "clicked", G_CALLBACK(main_page), GINT_TO_POINTER(2));
     gtk_box_append(GTK_BOX(box), button_2p);
-    gtk_widget_set_name(button_2p, "players-button");
+    gtk_widget_set_name(button_2p, "player-mode");
 
 }
 
@@ -327,6 +327,7 @@ void clear_window(GtkWidget *window) {
 }
 
 void set_player_turn(GtkWidget *widget, gpointer data) {
+    click_sounds();
     player_turn = GPOINTER_TO_INT(data); // Set the starting player: 1 for X, 2 for O
 
     // Disable Player X and Player O buttons
@@ -384,7 +385,7 @@ void inputHandler(GtkWidget *widget, gpointer data) {
         struct WinnerResult winner = checkWinner();
         printWinner(winner);
 
-        // Trigger bot move if in single-player mode
+        // Trigger bot move if in player mode = 1
         if (game_mode == 1 && player_turn == 2) {
             computer_Move();
         }
@@ -679,6 +680,8 @@ void resetBoard(GtkWidget *widget, gpointer window) {
     gtk_widget_set_sensitive(players[0], TRUE);
     gtk_widget_set_sensitive(players[1], TRUE);
 
+    player_turn = 1;
+    active_player(players[0], players[1]); // Default back to Player X 
 
     result.winner = '\0';
     for (int i = 0; i < 3; i++) {
@@ -687,8 +690,6 @@ void resetBoard(GtkWidget *widget, gpointer window) {
 
     gtk_label_set_text(GTK_LABEL(result_label), "");
 }
-
-
 
 void exitGame(GtkWidget *widget, gpointer window) {
     resetBoard(widget,window);
@@ -747,7 +748,7 @@ void activate(GtkApplication *app, gpointer user_data) {
 
     // Create a new window associated with the application
     window = gtk_application_window_new(app);
-    gtk_window_set_default_size(GTK_WINDOW(window), 900, 1000);
+    gtk_window_set_default_size(GTK_WINDOW(window), 700, 800);
 
     GtkWidget *header_bar = headerbar(window);
     gtk_window_set_titlebar(GTK_WINDOW(window), header_bar);
