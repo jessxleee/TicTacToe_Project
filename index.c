@@ -2,7 +2,6 @@
 #include <gtk/gtk.h>
 #include <gtk/gtkmain.h>
 #include <stdbool.h>
-#include <cairo.h>
 #include <limits.h>
 #include <stdio.h>
 #include <SDL2/SDL.h>
@@ -77,8 +76,8 @@ void load_sounds() {
 
 }
 
-// Function to initialize background music
 void background_music() {
+        // Function to initialize background music
         Mix_PlayMusic(bgMusic, -1); // Loop indefinitely
 }
 
@@ -189,7 +188,6 @@ void getCurrentBoardState(char output[3][3]) {
     }
 }
 
-
 bool win_found(char board[3][3]) {
     int score = eval_board(board);
     
@@ -226,6 +224,7 @@ void active_player(GtkWidget *playerX, GtkWidget *playerO){
 
     force_ui_updates();  // Ensure styles are applied immediately
 }
+
 void computer_Move() {
     struct Move best_move;
     struct timeval start, end;
@@ -281,11 +280,6 @@ void computer_Move() {
             double time_taken = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.0;
             printf("Time taken by AI to make move: %f seconds\n", time_taken);
             
-            // srand(time(NULL));
-            // int delay_seconds = (rand() % 3) + 1;
-            // printf("Delaying for %d seconds to simulate thinking\n", delay_seconds);
-            // sleep(delay_seconds);
-
             board[best_move.row][best_move.col] = opponent;  // Bot's symbol
             gtk_button_set_label(GTK_BUTTON(buttons[best_move.row * 3 + best_move.col]), 
                                  (opponent == 'X') ? "X" : "O");
@@ -307,8 +301,6 @@ gboolean delayed_computer_move(gpointer data) {
     computer_Move();  // Perform the bot's move
     return G_SOURCE_REMOVE;  // Ensure the timeout runs only once
 }
-
-
 
 void gameMenu(GtkWidget *window){
     GtkWidget *box;
@@ -367,8 +359,6 @@ void set_player_turn(GtkWidget *widget, gpointer data) {
     }
 }
 
-
-
 void main_page(GtkWidget *widget, gpointer data) {
     click_sounds();
     GtkWidget *window = GTK_WIDGET(gtk_widget_get_root(widget));  
@@ -417,7 +407,6 @@ void inputHandler(GtkWidget *widget, gpointer data) {
     }
 }
 
-
 void on_switch_clicked(GtkWidget *button, gpointer data) {
     g_print("Switching player turn.\n");
 
@@ -437,7 +426,6 @@ void on_switch_clicked(GtkWidget *button, gpointer data) {
         computer_Move();
     }
 }
-
 
 void gameBoard_mode1(GtkWidget *window) {
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
@@ -762,8 +750,6 @@ GtkWidget* headerbar(GtkWidget *window) {
     GtkWidget *minimize_button = gtk_button_new_from_icon_name("window-minimize-symbolic");
     g_signal_connect(minimize_button, "clicked", G_CALLBACK(on_minimize_clicked), window);
     gtk_header_bar_pack_end(GTK_HEADER_BAR(header_bar), minimize_button);
-
-
 
     return header_bar;
 }

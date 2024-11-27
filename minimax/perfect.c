@@ -20,10 +20,10 @@ int eval_board(char board[3][3]) {
     /*Find Row for X or O win*/
     for (int row = 0; row < 3; row++) {
         if (board[row][0] == board[row][1] && board[row][1] == board[row][2]) { /*If all cells in row match*/
-            if (board[row][0] == 'O') {
+            if (board[row][0] == opponent) {
                 return 10; /*If 'O' win*/
             }
-            else if (board[row][0] == 'X') {
+            else if (board[row][0] == player) {
                 return -10; /*If 'X' win*/
             }
         }
@@ -32,10 +32,10 @@ int eval_board(char board[3][3]) {
     /*Find Column for X or O win*/  
     for (int col = 0; col < 3; col++) {
         if (board[0][col] == board[1][col] && board[1][col] == board[2][col]) { /*If all cells in column match*/
-            if (board[0][col] == 'O') {
+            if (board[0][col] == opponent) {
                 return 10; /*If 'O' win*/
             }
-            else if (board[0][col] == 'X') {
+            else if (board[0][col] == player) {
                 return -10; /*If 'X' win*/
             }
         }
@@ -43,18 +43,18 @@ int eval_board(char board[3][3]) {
 
     /*Check Diagonals for X or O victory*/
     if (board[0][0] == board[1][1] && board[1][1] == board[2][2]) {
-        if (board[0][0] == 'O') {
+        if (board[0][0] == opponent) {
             return 10; /*If 'O' win*/
         }
-        else if (board[0][0] == 'X') {
+        else if (board[0][0] == player) {
             return -10; /*If 'X' win*/
         }
     }
     if (board[0][2] == board[1][1] && board[1][1] == board[2][0]) {
-        if (board[0][2] == 'O') {
+        if (board[0][2] == opponent) {
             return 10; /*If 'O' win*/
         }
-        else if (board[0][2] == 'X') {
+        else if (board[0][2] == player) {
             return -10; /*If 'X' win*/
         }
     }
@@ -76,7 +76,7 @@ int minmax(int depth, bool ismax, char board[3][3]) {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (board[i][j] == '\0') {
-                    board[i][j] = 'O';
+                    board[i][j] = opponent;
                     int result = minmax(depth + 1, false, board);  // Recursive Minimax
                     best = (result > best) ? result : best;
                     board[i][j] = '\0';  // Undo move
@@ -89,7 +89,7 @@ int minmax(int depth, bool ismax, char board[3][3]) {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
                 if (board[i][j] == '\0') {
-                    board[i][j] = 'X';
+                    board[i][j] = player;
                     int result = minmax(depth + 1, true, board);  // Recursive Minimax
                     best = (result < best) ? result : best;
                     board[i][j] = '\0';  // Undo move
@@ -116,7 +116,7 @@ int position_priority(int row, int col) {
 /* Check if placing a move in a given spot blocks the 'X' from winning */
 int check_block_move(int row, int col, char board[3][3], char opponent) {
     // Temporarily make the move
-    board[row][col] = 'X';
+    board[row][col] = player;
 
     // Check if this move blocks the 'X''s win
     int score = eval_board(board);
@@ -135,9 +135,9 @@ struct Move find_best_move(char board[3][3]) {
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             if (board[i][j] == '\0') {
-                board[i][j] = 'O';
+                board[i][j] = opponent;
                 int move = minmax(0, false, board);
-                printf("[DEBUG] Move value: %d at Row: %d, Col: %d\n", move, i, j);
+                printf("Move value: %d at Row: %d, Col: %d\n", move, i, j);
                 board[i][j] = '\0';
 
                 if (move > bestmove_value) {
@@ -148,7 +148,7 @@ struct Move find_best_move(char board[3][3]) {
             }
         }
     }
-    printf("[DEBUG] Best move chosen at Row: %d, Col: %d with value: %d\n", 
+    printf("Best move chosen at Row: %d, Col: %d with value: %d\n", 
            best_move.row, best_move.col, bestmove_value);
     return best_move;
 }

@@ -125,16 +125,16 @@ struct Move kmeans_find_best_move(char board[3][3]) {
     }
 
     if (available_count > 0) {
-        // Seed the random number generator (can be done in main)
-        srand(time(NULL));  // Only once, at the start of the program
+        // Random number generator
+        srand(time(NULL));
 
         // Choose a random move from the available spots
         int random_index = rand() % available_count;
         best_move = available_moves[random_index];
 
         // Make the move
-        board[best_move.row][best_move.col] = 2;  // AI makes its move ('x')
+        board[best_move.row][best_move.col] = 2;
     }
 
-    return best_move;  // Return invalid move if no moves available
+    return best_move;
 }
