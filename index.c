@@ -223,43 +223,58 @@ void active_player(GtkWidget *playerX, GtkWidget *playerO){
 }
 void computer_Move() {
     struct Move best_move;
+    struct timeval start, end;
    // Check the selected difficulty and use the appropriate method
     if (strcmp(selected_difficulty, "Naive") == 0) {
         // Use the Naive Bayes model to determine the move
+        mingw_gettimeofday(&start, NULL);
         best_move = get_naive_bayes_move();
+        mingw_gettimeofday(&end, NULL);
 
     } else if (strcmp(selected_difficulty, "Epsilon Greedy") == 0) {
         //Use reinforcement learning with Epsilon Greedy model to determine move
         loadQ_Table("RL-epsilon-greedy/q_table_100k.txt");
+        mingw_gettimeofday(&start, NULL);
         best_move = get_epsilonGreedy_move(board, player_turn);
+        mingw_gettimeofday(&end, NULL);
 
     }else if (strcmp(selected_difficulty, "Hard") == 0){
         // Use the Minimax algorithm for other difficulty levels
+        mingw_gettimeofday(&start, NULL);
         best_move = find_best_move(board);
+        mingw_gettimeofday(&end, NULL);
     }
     else if (strcmp(selected_difficulty, "Easy") == 0) {
         // Use the Minimax algorithm for other difficulty levels
+        mingw_gettimeofday(&start, NULL);
         best_move = diff_find_best_move(board);
+        mingw_gettimeofday(&end, NULL);
     }
     else if (strcmp(selected_difficulty, "Normal") == 0) {
         // Use the Minimax algorithm for other difficulty levels
+        mingw_gettimeofday(&start, NULL);
         best_move = diff_find_best_move(board);
+        mingw_gettimeofday(&end, NULL);
     }
     else if (strcmp(selected_difficulty, "K-Means") == 0) {
         // Load centroids from the file
         load_centroids("k-means/centroids.csv");
         // Use the K-Means algorithm to determine move
+        mingw_gettimeofday(&start, NULL);
         best_move = kmeans_find_best_move(board);
+        mingw_gettimeofday(&end, NULL);
     }
     else if (strcmp(selected_difficulty, "SVM") == 0) {
         // Use the Support Vector Machine model to determine the move
+        mingw_gettimeofday(&start, NULL);
         best_move = get_SVM_move();
+        mingw_gettimeofday(&end, NULL);
     }    
 
      if (!win_found(board)) {
         if (best_move.row != -1 && best_move.col != -1) {
-            // double time_taken = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.0;
-            // printf("Time taken by AI to make move: %f seconds\n", time_taken);
+            double time_taken = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1000000.0;
+            printf("Time taken by AI to make move: %f seconds\n", time_taken);
             
             // srand(time(NULL));
             // int delay_seconds = (rand() % 3) + 1;
